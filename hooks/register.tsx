@@ -61,6 +61,11 @@ const loadMine = async ($: EngineInterface) => {
     const css = at(`${id}.css`) ? String(await $.fs.read(`${dir}\\${id}.css`)) : undefined
     const t = parseUserTheme(String(await $.fs.read(`${dir}\\${f.name}`)), css, at(`${id}.js`) !== undefined)
     if (t?.wallpaper && t.id !== id) t.wallpaper = undefined // (its scene is <id>.js by the file's name)
+    const jpg = files.find(f => f.kind === 'file' && f.name === `${id}.jpg`)
+    // (a missing, large or broken picture leaves the tile drawn from the theme's colors)
+    const pic = t?.wallpaper && jpg && jpg.size < 64000
+      ? (await $.fs.read(`${dir}\\${id}.jpg`, { as: 'bytes' }).catch(() => undefined))?.base64 : undefined
+    if (t && pic?.startsWith('/9j/')) t.thumb = `data:image/jpeg;base64,${pic}`
     if (t && !THEMES.some(b => b.id === t.id)) found.push(t)
   }
   mine = found

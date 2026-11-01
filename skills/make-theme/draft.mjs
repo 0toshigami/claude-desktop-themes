@@ -14,6 +14,20 @@ const start = Number(arg('start') ?? 20)
 if (!js.includes('time: 0, last: 0')) throw new Error('theme.js has no scene clock to start')
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`)
 const status = theme.status?.idle ?? ''
+const boot = `<script>window.chrome = { runtime: { getURL: n => n } }; const T = ${JSON.stringify(T)};
+window.fetch = async n => ({ text: async () => (n === 'theme.json' ? JSON.stringify(T) : '{}') });</script>
+<script>${js.replace('time: 0, last: 0', `time: ${start}, last: 0`)}</script>`
+
+// --bare: the wallpaper alone, as the strip's tile shows it (tools/thumbs/capture.ps1 takes its picture)
+if (process.argv.includes('--bare')) {
+  writeFileSync(need('out'), `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><style>html, body { margin: 0; height: 100%; overflow: hidden; }</style></head><body>
+${boot}
+</body></html>
+`)
+  console.log('bare page written')
+  process.exit(0)
+}
 
 writeFileSync(need('out'), `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -51,9 +65,7 @@ writeFileSync(need('out'), `<!doctype html>
   <div data-cds="ChatComposer"><div class="bg-surface-3">Describe a task or ask a question<span class="send"></span></div></div>
   <div class="status">${esc(status)}</div>
 </div>
-<script>window.chrome = { runtime: { getURL: n => n } }; const T = ${JSON.stringify(T)};
-window.fetch = async n => ({ text: async () => (n === 'theme.json' ? JSON.stringify(T) : '{}') });</script>
-<script>${js.replace('time: 0, last: 0', `time: ${start}, last: 0`)}</script>
+${boot}
 </body></html>
 `)
 console.log('draft written')

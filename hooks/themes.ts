@@ -107,6 +107,20 @@ export const THEMES: Theme[] = [
     ['#0c1020', '#e3e8f6', '#ff5fa2'], 'linear-gradient(#05070f, #0b1024 40%, #1e1838 75%, #34203f)',
     'rgba(12, 16, 32, .6)', 'rgba(255, 95, 162, .3)', 'rain outside, code inside',
     { idle: '☔', tool: '☔ {tool}…', error: '⚡ {tool} failed', done: '🌃 done' }),
+  ((t: Theme) => ({ ...t, vars: { ...t.vars, 'cds-radius': '10px', 'cds-radius-composer': '18px',
+    'cds-shadow-md': '0 6px 22px rgba(242, 155, 184, .14)' } }))(
+    live('sakura-dusk', 'Sakura Dusk', 'Cherry branches at the corners, petals drifting through a violet evening',
+      ['#231a2e', '#f6e9f0', '#f29bb8'], 'linear-gradient(#17112b, #2a1c44 40%, #523058 72%, #8c4a5e)',
+      'rgba(35, 26, 46, .6)', 'rgba(242, 155, 184, .3)', 'petals at dusk',
+      { idle: '🌸', tool: '🌸 {tool}…', error: '🍂 {tool} failed', done: '🌸 done' })),
+  live('snow-cabin', 'Snow Cabin', 'A log cabin under snowy peaks, a warm window, smoke curling into falling snow',
+    ['#0e1628', '#e6edf8', '#ffb85c'], 'linear-gradient(#060b18, #101c38 55%, #1c2a4a)',
+    'rgba(14, 22, 40, .6)', 'rgba(255, 184, 92, .3)', 'warm inside, snow outside',
+    { idle: '❄', tool: '❄ {tool}…', error: '🌨 {tool} failed', done: '🏔 done' }),
+  live('star-voyage', 'Star Voyage', 'A little rocket passing a ringed planet, shooting stars overhead',
+    ['#0d0a1f', '#e6ecff', '#ff6fb5'], 'radial-gradient(110% 90% at 85% 20%, #2a1a52, #120d2e 50%, #08061a)',
+    'rgba(16, 12, 40, .6)', 'rgba(255, 111, 181, .3)', 'ready for liftoff?',
+    { idle: '🚀', tool: '🚀 {tool}…', error: '☄ {tool} failed', done: '🪐 done' }),
 ]
 
 function live(id: string, name: string, tagline: string, [bg, text, accent]: [string, string, string], sky: string,
@@ -182,7 +196,7 @@ export const parseUserTheme = (json: string, css?: string, scene = false): Theme
 
 export const tile = (t: Theme, on: boolean) => {
   const ring = on ? `<rect x="2" y="2" width="236" height="136" rx="12" fill="none" stroke="${t.accent ?? '#d97757'}" stroke-width="5"/>` : ''
-  const shot = t.wallpaper && THUMBS[t.wallpaper]
+  const shot = t.thumb ?? (t.wallpaper && THUMBS[t.wallpaper])
   if (!shot) return preview(t).replace('</svg>', `${ring}</svg>`)
   return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="240" height="140" viewBox="0 0 240 140">
 <clipPath id="w"><rect width="240" height="140" rx="12"/></clipPath>

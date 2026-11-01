@@ -14,6 +14,7 @@ speed, its cell size and a backdrop behind the chat that keeps the text easy to 
 | <img src="docs/moonlit.gif" alt="Moonlit"><br>**Moonlit** | <img src="docs/clawd.gif" alt="Clawd"><br>**Clawd** | <img src="docs/cloud-drift.gif" alt="Cloud Drift"><br>**Cloud Drift** |
 | <img src="docs/honu-lagoon.gif" alt="Honu Lagoon"><br>**Honu Lagoon** | <img src="docs/koi-pond.gif" alt="Koi Pond"><br>**Koi Pond** | <img src="docs/jellyfish.gif" alt="Jellyfish"><br>**Jellyfish** |
 | <img src="docs/lantern-night.gif" alt="Lantern Night"><br>**Lantern Night** | <img src="docs/fireflies.gif" alt="Fireflies"><br>**Fireflies** | <img src="docs/neon-rain.gif" alt="Neon Rain"><br>**Neon Rain** |
+| <img src="docs/sakura-dusk.gif" alt="Sakura Dusk"><br>**Sakura Dusk** | <img src="docs/snow-cabin.gif" alt="Snow Cabin"><br>**Snow Cabin** | <img src="docs/star-voyage.gif" alt="Star Voyage"><br>**Star Voyage** |
 
 ## Color themes
 
@@ -28,6 +29,8 @@ shake on an error.
 
 Ask Claude to "make me a theme", with a text idea, a picture, or both. The `make-theme` skill asks which kind you
 want, drafts it as an Artifact for you to approve, and then builds it.
+
+https://github.com/user-attachments/assets/128fd8a4-7061-43d6-8a54-7e9948964825
 
 ## Before you install
 

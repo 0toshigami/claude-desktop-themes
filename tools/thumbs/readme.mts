@@ -38,7 +38,9 @@ const send = (method: string, params = {}) => new Promise<any>(ok => { waiting.s
 const sleep = (ms: number) => new Promise(ok => setTimeout(ok, ms))
 
 await send('Emulation.setDeviceMetricsOverride', { width: W, height: H, deviceScaleFactor: 1, mobile: false })
-for (const t of THEMES.filter(t => t.wallpaper)) {
+// ids on the command line: record only those wallpapers (the others' GIFs stay as they are)
+const only = process.argv.slice(2)
+for (const t of THEMES.filter(t => t.wallpaper && (!only.length || only.includes(t.id)))) {
   const page = join(here, `thumb-${t.id}.html`)
   if (!existsSync(page)) { console.log(`${t.id}: no page, run pages.ts first`); continue }
   await send('Page.navigate', { url: pathToFileURL(page).href })

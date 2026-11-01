@@ -76,9 +76,17 @@ Do not change the mod's own files: the theme belongs to the person, not to the m
    `glow: { r, color, a }`. Only an `art` sprite can have `halo`. A cell can have `floor`: the least brightness it
    keeps in the chat column. A scene can have `size`: the largest cell size in pixels.
 2. Write the theme as `<id>.json` beside it, with `"wallpaper": "<id>"` (the theme's own id: the mod refuses any
-   other) and the `wall-*` vars that `live()` in `hooks/themes.ts` sets. Its strip tile is drawn from its colors
-   and `deco`.
-3. Tell the person to run `/themes` and pick the theme in the "Your themes" row. The mod copies the scene into the extension and it shows at once, with no restart.
+   other) and the `wall-*` vars that `live()` in `hooks/themes.ts` sets.
+3. Make its strip tile, a picture of the scene, as `<id>.jpg` beside it (without it the tile is drawn from the
+   theme's colors and `deco`, and does not show the scene). Use the same `--start` as the approved draft:
+   ```bash
+   node "<this skill's folder>/draft.mjs" --theme "<themes folder>/<id>.json" --scene "<themes folder>/<id>.js" --start 20 --bare --out draft/<id>-tile.html
+   powershell -NoProfile -File "<the mod's root>/tools/thumbs/capture.ps1" -Page draft/<id>-tile.html -Out "<themes folder>/<id>.jpg"
+   ```
+   Read the picture to check it shows the scene's main motifs. If the capture fails (no browser found, `no shot`,
+   or a picture that does not show the scene), delete any `<id>.jpg` and go on: the tile then falls back to the
+   theme's colors and `deco`, so give the theme a `deco` that hints at the scene, and tell the person.
+4. Tell the person to run `/themes` and pick the theme in the "Your themes" row. The mod copies the scene into the extension and it shows at once, with no restart.
 
 ## The theme file
 

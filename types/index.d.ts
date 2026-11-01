@@ -10,6 +10,8 @@ export type Theme = {
   status?: { idle: string; tool: string; error: string; done: string }
   deco?: string
   wallpaper?: string
+  // a person's own wallpaper: its <id>.jpg, as a data: URL, for the strip's tile
+  thumb?: string
   css?: string
 }
 
