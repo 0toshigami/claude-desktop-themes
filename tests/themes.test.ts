@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { fileOf } from '../hooks/register'
+import { fileOf, withoutOurs } from '../hooks/register'
 import { THEMES, parseUserTheme, tile } from '../hooks/themes'
 
 test('a person\'s own theme is read as a simple theme, and a bad one is refused', async () => {
@@ -28,14 +28,39 @@ test('every theme has a tile the desktop takes, and Claude writes no colors', as
   expect(look.veil).toBe(.6)
 })
 
+test('removing takes out only our entries from a shared slot, and the whole slot when it was ours', async () => {
+  const war = [{ resources: ['theme.json', 'event.json'], matches: ['<all_urls>'] }]
+  const shared = withoutOurs({ content_scripts: [{ js: ['splash.js'] }, { js: ['theme.js'] }], web_accessible_resources: war })
+  expect(shared?.content_scripts).toEqual([{ js: ['splash.js'] }])
+  expect(shared?.web_accessible_resources).toEqual([])
+  expect(withoutOurs({ content_scripts: [{ js: ['theme.js'] }], web_accessible_resources: war })).toBeUndefined()
+})
+
 test('the strip above the prompt shows only once opened, a button per theme, and closes', async ($, on) => {
   on('ui.render', { component: 'AbovePrompt' }, ($, e) => $.ui.resolve(e).Box({}))
+  // the extension is copied and Claude Desktop restarted once `restarted` is true
+  let restarted = false
+  on('env.get', ($, e) =>
+    ({ value: e.name === 'APPDATA' ? 'C:\\AppData' : e.name === 'REACT_PROFILE' && restarted ? '1' : undefined }))
+  on('fs.read', ($, e) => {
+    if (restarted && e.path.endsWith('manifest.json')) return { value: '{"content_scripts":[{"js":["theme.js"]}]}' }
+    throw new Error('ENOENT')
+  })
   const props = { hasSurvey: false, isWorking: false, maxRows: 40, columns: 100 }
   const shut = await $.ui.mount({ plugin: 'desktop-themes', surface: 'desktop', component: 'AbovePrompt', props })
   expect(await shut.find({ key: 'close' })).toBeUndefined()
   await shut.unmount()
   await $.command.run({ command: 'themes' })
+  const bare = await $.ui.mount({ plugin: 'desktop-themes', surface: 'desktop', component: 'AbovePrompt', props })
+  expect(await bare.find({ key: 'install' })).toBeDefined()
+  for (const t of THEMES) expect(await bare.find({ key: `use-${t.id}` })).toBeUndefined()
+  await bare.unmount()
+  restarted = true
+  await $.command.run({ command: 'themes' })
+  await $.command.run({ command: 'themes' })
   const ui = await $.ui.mount({ plugin: 'desktop-themes', surface: 'desktop', component: 'AbovePrompt', props })
+  expect(await ui.find({ key: 'install' })).toBeUndefined()
+  expect(await ui.find({ key: 'remove' })).toBeDefined()
   for (const t of THEMES) expect(await ui.find({ key: `use-${t.id}` })).toBeDefined()
   await ui.press({ key: 'close' })
   await ui.unmount()

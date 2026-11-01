@@ -10,15 +10,19 @@ import { THEMES, parseUserTheme, tile } from './themes'
 // with REACT_PROFILE set by launchctl setenv
 const SLOT = 'Claude\\extensions\\fmkadmapgofadopljbjfkapdkoienihi'
 const current = atom({ plugin: 'desktop-themes', key: 'current' } as const, 'claude')
-const isInstalled = atom({ plugin: 'desktop-themes', key: 'isInstalled' } as const, false)
+// missing: no extension; restart: copied, but Claude Desktop has not loaded it yet
+type Setup = 'missing' | 'restart' | 'ready'
+const setup = atom({ plugin: 'desktop-themes', key: 'setup' } as const, 'missing' as Setup)
 type Motion = 'smooth' | 'grid'
-const motion = atom({ plugin: 'desktop-themes', key: 'motion' } as const, 'smooth' as Motion)
+type Look = { motion: Motion; speed: number; cell: number; veil: number }
+const LOOK: Look = { motion: 'grid', speed: 4, cell: 14, veil: .4 }
+const motion = atom({ plugin: 'desktop-themes', key: 'motion' } as const, LOOK.motion)
 const MOTIONS: Record<Motion, string> = { smooth: 'Smooth', grid: 'Cell by cell' }
-const speed = atom({ plugin: 'desktop-themes', key: 'speed' } as const, 1)
+const speed = atom({ plugin: 'desktop-themes', key: 'speed' } as const, LOOK.speed)
 const SPEEDS = [1, 2, 4, 8, 16]
-const cell = atom({ plugin: 'desktop-themes', key: 'cell' } as const, 22)
+const cell = atom({ plugin: 'desktop-themes', key: 'cell' } as const, LOOK.cell)
 const CELLS: Record<number, string> = { 14: 'Small', 18: 'Medium', 22: 'Large' }
-const veil = atom({ plugin: 'desktop-themes', key: 'veil' } as const, .4)
+const veil = atom({ plugin: 'desktop-themes', key: 'veil' } as const, LOOK.veil)
 const VEILS = [0, .2, .4, .6, .8]
 const isStripOpen = atom({ plugin: 'desktop-themes', key: 'isStripOpen' } as const, false)
 
@@ -27,8 +31,7 @@ const slot = async ($: EngineInterface) => {
   return appData && `${appData}\\${SLOT}`
 }
 
-type Look = { motion: Motion; speed: number; cell: number; veil: number }
-export const fileOf = (t: Theme, css = '', look: Look = { motion: 'smooth', speed: 1, cell: 22, veil: .4 }) =>
+export const fileOf = (t: Theme, css = '', look: Look = LOOK) =>
   JSON.stringify(t.bg
     ? { id: t.id, bg: t.bg, text: t.text, accent: t.accent, font: t.font, vars: t.vars, wallpaper: t.wallpaper, ...look, css }
     : {})
@@ -73,7 +76,10 @@ const signal = ($: EngineInterface, kind: '' | 'tool' | 'error' | 'done', tool =
 const check = async ($: EngineInterface) => {
   const dir = await slot($)
   const manifest = dir ? await $.fs.read(`${dir}\\manifest.json`).catch(() => '') : ''
-  await update($, isInstalled, () => String(manifest).includes('"theme.js"'))
+  // setx reaches only processes started after it, so REACT_PROFILE shows here once Claude Desktop restarted
+  const loaded = (await $.env.get('REACT_PROFILE')) === '1'
+  await update($, setup, was => !String(manifest).includes('"theme.js"') ? 'missing'
+    : loaded && was !== 'restart' ? 'ready' : 'restart')
 }
 
 const install = async ($: EngineInterface) => {
@@ -104,10 +110,50 @@ const install = async ($: EngineInterface) => {
   if (!(await $.fs.exists(`${dir}\\event.json`))) await $.fs.write(`${dir}\\event.json`, '{}')
   await $.fs.write(`${dir}\\manifest.json`, JSON.stringify(manifest, null, 2))
   const { exitCode } = await $.process.run(['setx', 'REACT_PROFILE', '1'])
-  await check($)
+  await update($, setup, () => 'restart')
   $.ui.toast(exitCode === 0
     ? 'Installed. Restart Claude Desktop to use the themes.'
     : 'The extension is copied, but REACT_PROFILE=1 could not be set.')
+}
+
+type Manifest = { content_scripts?: { js?: string[] }[]; web_accessible_resources?: { resources?: string[] }[] }
+const OURS = ['theme.js', 'theme.json', 'event.json']
+// The slot is React DevTools' and other mods may share it, so take out only our entries;
+// undefined when nothing but ours was there
+export const withoutOurs = (m: Manifest): Manifest | undefined => {
+  const scripts = (m.content_scripts ?? []).filter(s => !s.js?.includes('theme.js'))
+  if (!scripts.length) return undefined
+  const war = (m.web_accessible_resources ?? [])
+    .map(w => ({ ...w, resources: w.resources?.filter(r => !OURS.includes(r)) }))
+    .filter(w => w.resources?.length)
+  return { ...m, content_scripts: scripts, web_accessible_resources: war }
+}
+
+const remove = async ($: EngineInterface) => {
+  const dir = await slot($)
+  if (!dir) return
+  let manifest: Manifest | undefined
+  try {
+    manifest = JSON.parse(String(await $.fs.read(`${dir}\\manifest.json`)))
+  } catch {}
+  // an unreadable manifest may still belong to another mod: then delete only our files, never the folder
+  const rest = manifest && withoutOurs(manifest)
+  let exitCode: number | null
+  if (!manifest || rest) {
+    if (rest) await $.fs.write(`${dir}\\manifest.json`, JSON.stringify(rest, null, 2))
+    ;({ exitCode } = await $.process.run(['cmd', '/c', 'del', '/q', ...OURS.map(f => `${dir}\\${f}`)]))
+  } else {
+    // (SetEnvironmentVariable, not reg delete: it tells Windows, so apps started later see the change)
+    await $.process.run(['powershell', '-NoProfile', '-Command',
+      "[Environment]::SetEnvironmentVariable('REACT_PROFILE', $null, 'User')"])
+    ;({ exitCode } = await $.process.run(['cmd', '/c', 'rmdir', '/s', '/q', dir]))
+  }
+  await update($, setup, () => 'missing')
+  await update($, current, () => 'claude')
+  $.ui.status(undefined)
+  $.ui.toast(exitCode === 0
+    ? 'Extension removed. Restart Claude Desktop; then you can uninstall the plugin.'
+    : `Could not remove every file. Delete them by hand in ${dir}`)
 }
 
 const pick = async ($: EngineInterface, t: Theme) => {
@@ -141,10 +187,10 @@ export const register: Register = on => {
       const dir = await slot($)
       const saved = dir ? JSON.parse(String(await $.fs.read(`${dir}\\theme.json`))) : {}
       await update($, current, () => (typeof saved.id === 'string' ? saved.id : 'claude'))
-      await update($, motion, () => (Object.hasOwn(MOTIONS, saved.motion) ? saved.motion : 'smooth'))
-      await update($, speed, () => (SPEEDS.includes(saved.speed) ? saved.speed : 1))
-      await update($, cell, () => (CELLS[saved.cell] ? saved.cell : 22))
-      await update($, veil, () => (VEILS.includes(saved.veil) ? saved.veil : .4))
+      await update($, motion, () => (Object.hasOwn(MOTIONS, saved.motion) ? saved.motion : LOOK.motion))
+      await update($, speed, () => (SPEEDS.includes(saved.speed) ? saved.speed : LOOK.speed))
+      await update($, cell, () => (CELLS[saved.cell] ? saved.cell : LOOK.cell))
+      await update($, veil, () => (VEILS.includes(saved.veil) ? saved.veil : LOOK.veil))
       $.ui.status(statusOf(await active($), 'idle'))
     } catch {}
     return next(e)
@@ -163,7 +209,7 @@ export const register: Register = on => {
     const { Box, Text, Button } = els
     const Svg = 'Svg' in els ? els.Svg : undefined
     const now = await read($, current)
-    const installed = await read($, isInstalled)
+    const stage = await read($, setup)
     const move = await read($, motion)
     const pace = await read($, speed)
     const size = await read($, cell)
@@ -190,12 +236,25 @@ export const register: Register = on => {
             <Text weight="semibold">Themes</Text>
             <Text dimColor>{`  ·  ${worn.name}: ${worn.tagline}`}</Text>
           </Text>
-          <Button key="close" role="dismiss" label="Close" onPress={() => update($, isStripOpen, () => false)} />
+          <Box flexDirection="row" gap={1}>
+            {stage === 'missing' ? null
+              : <Button key="remove" label="Remove extension" dimColor onPress={() => remove($)} />}
+            <Button key="close" role="dismiss" label="Close" onPress={() => update($, isStripOpen, () => false)} />
+          </Box>
         </Box>
-        {!installed ? (
-          <Box flexDirection="row" gap={1} alignItems="center">
-            <Text dimColor>The extension that paints Claude Desktop is not installed.</Text>
-            <Button key="install" label="Install extension" variant="primary" onPress={() => install($)} />
+        {stage === 'missing' ? (
+          <Box key="notice" flexDirection="column" gap="xs" padding={1} borderStyle="round" borderColor="warning">
+            <Text color="warning" weight="semibold">One step first: install the extension</Text>
+            <Text>It paints the themes on Claude Desktop. After it is installed, restart Claude Desktop.</Text>
+            <Box flexDirection="row">
+              <Button key="install" label="Install extension" variant="primary" onPress={() => install($)} />
+            </Box>
+          </Box>
+        ) : stage === 'restart' ? (
+          <Box key="notice" flexDirection="column" gap="xs" padding={1} borderStyle="round" borderColor="success">
+            <Text color="success" weight="semibold">Installed. Now restart Claude Desktop</Text>
+            <Text>Quit Claude Desktop fully (also from the tray), open it again, then type /themes.</Text>
+            <Text dimColor>Still here after a restart? Set the user environment variable REACT_PROFILE=1 by hand, then restart again.</Text>
           </Box>
         ) : worn.wallpaper && (
           <Box flexDirection="row" gap={1} alignItems="center" flexWrap="wrap">
@@ -210,9 +269,9 @@ export const register: Register = on => {
             <Button key="veil" label={shade ? `${Math.round(shade * 100)}%` : 'Off'} onPress={() => nextVeil($)} />
           </Box>
         )}
-        {row('Live wallpapers', THEMES.filter(t => t.wallpaper))}
-        {row('Color themes', THEMES.filter(t => !t.wallpaper))}
-        {mine.length ? row('Your themes', mine) : null}
+        {stage === 'ready' ? row('Live wallpapers', THEMES.filter(t => t.wallpaper)) : null}
+        {stage === 'ready' ? row('Color themes', THEMES.filter(t => !t.wallpaper)) : null}
+        {stage === 'ready' && mine.length ? row('Your themes', mine) : null}
       </Box>
     )
   })

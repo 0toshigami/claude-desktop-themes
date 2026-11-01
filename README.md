@@ -17,7 +17,10 @@ belong to Anthropic.
 
 ## Install
 
-At the prompt of a Claude Code terminal session:
+In Claude Desktop: open **Settings → Plugins**, press **Add → Add marketplace**, enter
+`https://github.com/0toshigami/claude-desktop-themes.git`, then install **desktop-themes** from it.
+
+Or, at the prompt of a Claude Code terminal session:
 
 ```
 /plugin install desktop-themes --marketplace 0toshigami/claude-desktop-themes
@@ -33,12 +36,14 @@ claude plugin install desktop-themes --marketplace 0toshigami/claude-desktop-the
 
 ## First use
 
-1. In a Claude Code session in Claude Desktop, type `/themes`. The theme strip opens above the prompt.
-2. The first time, the strip shows an **Install extension** button. Press it. It copies the extension that paints
-   the themes into `%APPDATA%\Claude\extensions` and sets `REACT_PROFILE=1` for your Windows account, which makes
-   Claude Desktop load it.
-3. Restart Claude Desktop.
-4. Type `/themes` again and press a theme's name to put it on. Press **Claude** to go back to Claude's own colors.
+1. If `/themes` does not show in the command list (often only `/make-theme` shows just after the install), type
+   `/reload-plugins` and then `/reload-skills`.
+2. In a Claude Code session in Claude Desktop, type `/themes`. The theme strip opens above the prompt.
+3. The first time, the strip shows only an **Install extension** button. Press it. It copies the extension that
+   paints the themes into `%APPDATA%\Claude\extensions` and sets `REACT_PROFILE=1` for your Windows account, which
+   makes Claude Desktop load it.
+4. Quit Claude Desktop fully (also from the system tray) and open it again.
+5. Type `/themes` again and press a theme's name to put it on. Press **Claude** to go back to Claude's own colors.
 
 ## Your own themes
 
@@ -46,6 +51,30 @@ claude plugin install desktop-themes --marketplace 0toshigami/claude-desktop-the
   They show in the strip's "Your themes" row, and an update of the mod does not remove them.
 - **Live wallpapers** are code, so the skill adds them to the mod's own files. An update of the mod replaces those
   files: keep a copy of yours.
+
+## Uninstall
+
+Uninstalling the plugin removes only its commands. The extension in `%APPDATA%` stays, so remove it first:
+
+1. Type `/themes` and press **Remove extension**. It takes the mod's files and entries out of
+   `%APPDATA%\Claude\extensions\fmkadmapgofadopljbjfkapdkoienihi`. If no other mod uses that folder, it also removes
+   the folder and the `REACT_PROFILE` variable. If another mod uses the folder, it keeps both.
+2. Restart Claude Desktop.
+3. Uninstall the plugin: in **Settings → Plugins**, or with `claude plugin uninstall desktop-themes`.
+4. Optional: remove the marketplace too, which deletes its copy in `%USERPROFILE%\.claude\plugins\marketplaces`. Use
+   **Settings → Plugins → Add → Manage marketplaces**, or `claude plugin marketplace remove claude-desktop-themes`.
+
+Your own themes in `%USERPROFILE%\.claude\desktop-themes\` stay. Delete that folder if you do not want them.
+
+If you uninstalled the plugin first, remove the extension by hand in PowerShell. The folder can hold other mods
+too, so this deletes the folder and the variable only when the folder holds this mod alone:
+
+```powershell
+$d = "$env:APPDATA\Claude\extensions\fmkadmapgofadopljbjfkapdkoienihi"
+if (((Get-Content "$d\manifest.json" -Raw | ConvertFrom-Json).content_scripts.js -join ',') -eq 'theme.js') {
+  Remove-Item -Recurse $d; [Environment]::SetEnvironmentVariable('REACT_PROFILE', $null, 'User')
+} else { "Another mod shares $d. Delete only theme.js, theme.json and event.json, and their manifest entries." }
+```
 
 ## Safety
 
