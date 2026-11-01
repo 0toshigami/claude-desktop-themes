@@ -1,16 +1,43 @@
-# desktop-themes
+# Claude Desktop Themes
 
 Themes for Claude Desktop, applied live. Pick one from a strip above the prompt with `/themes`.
 
-- **Color themes:** Sunset Cloud, Sakura, Terminal, Night Sea and Old Paper. Each theme changes colors, fonts, corner
-  shapes and shadows, and some react to tool calls (a glow while a tool runs, a shake on an error).
-- **Live ASCII wallpapers:** Moonlit, Clawd, Cloud Drift, Honu Lagoon, Koi Pond, Jellyfish, Lantern Night, Fireflies
-  and Neon Rain. An animated scene, drawn in characters, moves behind the chat. You can set its motion (smooth or cell
-  by cell), its speed, its cell size and a backdrop behind the chat that keeps the text easy to read.
-- **Make your own:** ask Claude to "make me a theme", with a text idea, a picture, or both. The `make-theme` skill
-  asks which kind you want, drafts it as an Artifact for you to approve, and then builds it.
+<p align="center"><img src="docs/koi-pond.gif" width="720" alt="The Koi Pond live wallpaper: koi drawn in letter tiles swim across a green pond"></p>
 
-Windows only for now. The mod works in the Claude Desktop app's Code tab.
+## Live ASCII wallpapers
+
+An animated scene, drawn in characters, moves behind the chat. You can set its motion (smooth or cell by cell), its
+speed, its cell size and a backdrop behind the chat that keeps the text easy to read.
+
+| | | |
+|:-:|:-:|:-:|
+| <img src="docs/moonlit.gif" alt="Moonlit"><br>**Moonlit** | <img src="docs/clawd.gif" alt="Clawd"><br>**Clawd** | <img src="docs/cloud-drift.gif" alt="Cloud Drift"><br>**Cloud Drift** |
+| <img src="docs/honu-lagoon.gif" alt="Honu Lagoon"><br>**Honu Lagoon** | <img src="docs/koi-pond.gif" alt="Koi Pond"><br>**Koi Pond** | <img src="docs/jellyfish.gif" alt="Jellyfish"><br>**Jellyfish** |
+| <img src="docs/lantern-night.gif" alt="Lantern Night"><br>**Lantern Night** | <img src="docs/fireflies.gif" alt="Fireflies"><br>**Fireflies** | <img src="docs/neon-rain.gif" alt="Neon Rain"><br>**Neon Rain** |
+
+## Color themes
+
+Each theme changes colors, fonts, corner shapes and shadows. Some react to tool calls: a glow while a tool runs, a
+shake on an error.
+
+| | | | | |
+|:-:|:-:|:-:|:-:|:-:|
+| <img src="docs/sunset-cloud.svg" width="160" alt="Sunset Cloud"><br>**Sunset Cloud** | <img src="docs/sakura.svg" width="160" alt="Sakura"><br>**Sakura** | <img src="docs/terminal.svg" width="160" alt="Terminal"><br>**Terminal** | <img src="docs/night-sea.svg" width="160" alt="Night Sea"><br>**Night Sea** | <img src="docs/old-paper.svg" width="160" alt="Old Paper"><br>**Old Paper** |
+
+## Make your own
+
+Ask Claude to "make me a theme", with a text idea, a picture, or both. The `make-theme` skill asks which kind you
+want, drafts it as an Artifact for you to approve, and then builds it.
+
+## Before you install
+
+The mod works in the Claude Desktop app's Code tab.
+
+> **Unofficial.** This mod is built on the mods, extensions and other parts that Claude Desktop already has. It is
+> not a supported theming feature, so a future update of Claude Desktop can break it.
+>
+> **Windows only for now.** I tested it only on Windows. macOS and Linux are not done yet, and I do not have a Mac
+> or a Linux machine to test on. Help from the community is welcome: issues and pull requests for those platforms.
 
 This is a community mod. It is not made or endorsed by Anthropic. Claude, Claude Desktop, Claude Code and Clawd
 belong to Anthropic.
@@ -18,12 +45,12 @@ belong to Anthropic.
 ## Install
 
 In Claude Desktop: open **Settings → Plugins**, press **Add → Add marketplace**, enter
-`https://github.com/0toshigami/claude-desktop-themes.git`, then install **desktop-themes** from it.
+`https://github.com/0toshigami/claude-desktop-themes.git`, then install **claude-desktop-themes** from it.
 
 Or, at the prompt of a Claude Code terminal session:
 
 ```
-/plugin install desktop-themes --marketplace 0toshigami/claude-desktop-themes
+/plugin install claude-desktop-themes --marketplace 0toshigami/claude-desktop-themes
 ```
 
 Answer `y` to add the marketplace, then pick a scope.
@@ -31,7 +58,7 @@ Answer `y` to add the marketplace, then pick a scope.
 From a shell:
 
 ```bash
-claude plugin install desktop-themes --marketplace 0toshigami/claude-desktop-themes
+claude plugin install claude-desktop-themes --marketplace 0toshigami/claude-desktop-themes
 ```
 
 ## First use
@@ -47,7 +74,7 @@ claude plugin install desktop-themes --marketplace 0toshigami/claude-desktop-the
 
 ## Your own themes
 
-- **Simple themes** go into `%USERPROFILE%\.claude\desktop-themes\` as `<id>.json`, with an optional `<id>.css`.
+- **Simple themes** go into `%USERPROFILE%\.claude\claude-desktop-themes\` as `<id>.json`, with an optional `<id>.css`.
   They show in the strip's "Your themes" row, and an update of the mod does not remove them.
 - **Live wallpapers** are code, so the skill adds them to the mod's own files. An update of the mod replaces those
   files: keep a copy of yours.
@@ -60,11 +87,11 @@ Uninstalling the plugin removes only its commands. The extension in `%APPDATA%` 
    `%APPDATA%\Claude\extensions\fmkadmapgofadopljbjfkapdkoienihi`. If no other mod uses that folder, it also removes
    the folder and the `REACT_PROFILE` variable. If another mod uses the folder, it keeps both.
 2. Restart Claude Desktop.
-3. Uninstall the plugin: in **Settings → Plugins**, or with `claude plugin uninstall desktop-themes`.
+3. Uninstall the plugin: in **Settings → Plugins**, or with `claude plugin uninstall claude-desktop-themes`.
 4. Optional: remove the marketplace too, which deletes its copy in `%USERPROFILE%\.claude\plugins\marketplaces`. Use
    **Settings → Plugins → Add → Manage marketplaces**, or `claude plugin marketplace remove claude-desktop-themes`.
 
-Your own themes in `%USERPROFILE%\.claude\desktop-themes\` stay. Delete that folder if you do not want them.
+Your own themes in `%USERPROFILE%\.claude\claude-desktop-themes\` stay. Delete that folder if you do not want them.
 
 If you uninstalled the plugin first, remove the extension by hand in PowerShell. The folder can hold other mods
 too, so this deletes the folder and the variable only when the folder holds this mod alone:
@@ -81,6 +108,11 @@ if (((Get-Content "$d\manifest.json" -Raw | ConvertFrom-Json).content_scripts.js
 A theme's stylesheet goes on your logged-in Claude page, so the extension refuses any stylesheet that loads something
 from outside it: no `@import`, and no `url()` except `data:`. Theme files are data only. Only the extension's own
 code draws the live wallpapers.
+
+## Thanks
+
+Thanks to [@handsher_NGU](https://x.com/handsher_NGU/status/2115618341675319417/video/1), whose post gave the idea
+for this mod.
 
 ## License
 

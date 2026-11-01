@@ -56,7 +56,7 @@ const varsOf = t => {
   for (const [k, v] of Object.entries(t.vars ?? {}))
     if (/^[a-z][a-z0-9-]{0,80}$/.test(k) && typeof v === 'string' && v.length <= 500 && !/[;{}<>]/.test(v) && safe(v))
       vars.push([k, v]);
-    else console.warn('desktop-themes: var refused', k);
+    else console.warn('claude-desktop-themes: var refused', k);
   return vars;
 };
 

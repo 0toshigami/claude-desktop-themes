@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="140" viewBox="0 0 240 140">
+<clipPath id="w"><rect width="240" height="140" rx="10"/></clipPath><g clip-path="url(#w)">
+<rect width="240" height="140" fill="#2b2030"/>
+<rect width="56" height="140" fill="#332837"/>
+<rect x="9" y="14" width="38" height="6" rx="3" fill="#ff8a6b"/>
+<rect x="9" y="28" width="32" height="5" rx="2.5" fill="#877a80"/>
+<rect x="9" y="39" width="36" height="5" rx="2.5" fill="#877a80"/>
+<rect x="9" y="50" width="26" height="5" rx="2.5" fill="#877a80"/>
+<rect x="148" y="12" width="82" height="22" rx="10" fill="#3f3442"/>
+<text x="158" y="27" font-family="'Segoe UI', sans-serif" font-size="10" fill="#f7e8e2">Hi, Claude!</text>
+<text x="66" y="54" font-family="'Segoe UI', sans-serif" font-size="10" fill="#f7e8e2">Hi! What shall we make?</text>
+<rect x="66" y="62" width="150" height="5" rx="2.5" fill="#877a80"/>
+<rect x="66" y="72" width="120" height="5" rx="2.5" fill="#877a80"/>
+<rect x="66" y="102" width="164" height="28" rx="14" fill="#3f3442" stroke="#5b4f5a"/>
+<circle cx="216" cy="116" r="8" fill="#ff8a6b"/>
+<circle cx="200" cy="140" r="60" fill="#ff8a6b" opacity=".18"/>
+<ellipse cx="120" cy="40" rx="26" ry="8" fill="#f7e8e2" opacity=".12"/></g>
+</svg>

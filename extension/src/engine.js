@@ -143,13 +143,13 @@ const paint = t => {
       draw(wall); // (under reduced motion no frame loop runs to show the new settings)
     }
   } catch (err) {
-    console.warn('desktop-themes: the wallpaper failed', err);
+    console.warn('claude-desktop-themes: the wallpaper failed', err);
   }
   document.getElementById('desktop-theme')?.remove();
   const vars = varsOf(t), css = t.css ?? '';
   mode = ok(t.bg) && ok(t.text) && ok(t.accent) ? (luma(rgb(t.bg)) > .5 ? 'light' : 'dark') : undefined;
   syncMode();
-  if (css && !safe(css)) console.warn('desktop-themes: the theme\'s css was refused (it loads from outside the page)');
+  if (css && !safe(css)) console.warn('claude-desktop-themes: the theme\'s css was refused (it loads from outside the page)');
   const text = (vars.length ? `*{${vars.map(([k, v]) => `--${k}:${v} !important`).join(';')}}\n` : '') + (safe(css) ? css : '');
   if (typeof t.id === 'string' && /^[a-z0-9-]{1,40}$/.test(t.id) && text) root.dataset.theme = t.id;
   else delete root.dataset.theme;
@@ -183,7 +183,7 @@ const tickTheme = async () => {
   try {
     text = await read('theme.json');
   } catch (err) {
-    if (!warned) console.warn('desktop-themes: cannot read theme.json', err);
+    if (!warned) console.warn('claude-desktop-themes: cannot read theme.json', err);
     warned = true;
     return;
   }
@@ -192,9 +192,9 @@ const tickTheme = async () => {
   try {
     const t = JSON.parse(text);
     apply(t);
-    console.log('desktop-themes:', t.id ?? 'Claude\'s own');
+    console.log('claude-desktop-themes:', t.id ?? 'Claude\'s own');
   } catch (err) {
-    console.warn('desktop-themes: theme.json is not JSON', err);
+    console.warn('claude-desktop-themes: theme.json is not JSON', err);
   }
 };
 

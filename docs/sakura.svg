@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="140" viewBox="0 0 240 140">
+<clipPath id="w"><rect width="240" height="140" rx="10"/></clipPath><g clip-path="url(#w)">
+<rect width="240" height="140" fill="#fff4f6"/>
+<rect width="56" height="140" fill="#f8ecee"/>
+<rect x="9" y="14" width="38" height="6" rx="3" fill="#e0567f"/>
+<rect x="9" y="28" width="32" height="5" rx="2.5" fill="#ae999f"/>
+<rect x="9" y="39" width="36" height="5" rx="2.5" fill="#ae999f"/>
+<rect x="9" y="50" width="26" height="5" rx="2.5" fill="#ae999f"/>
+<rect x="148" y="12" width="82" height="22" rx="11" fill="#ede0e3"/>
+<text x="158" y="27" font-family="'Segoe UI', sans-serif" font-size="10" fill="#4b2a35">Hi, Claude!</text>
+<text x="66" y="54" font-family="'Segoe UI', sans-serif" font-size="10" fill="#4b2a35">Hi! What shall we make?</text>
+<rect x="66" y="62" width="150" height="5" rx="2.5" fill="#ae999f"/>
+<rect x="66" y="72" width="120" height="5" rx="2.5" fill="#ae999f"/>
+<rect x="66" y="102" width="164" height="28" rx="14" fill="#ede0e3" stroke="#d5c5c9"/>
+<circle cx="216" cy="116" r="8" fill="#e0567f"/>
+<g fill="#f4a6bd"><ellipse cx="100" cy="20" rx="5" ry="3" transform="rotate(30 100 20)"/>
+<ellipse cx="190" cy="90" rx="5" ry="3" transform="rotate(-20 190 90)"/>
+<ellipse cx="130" cy="125" rx="4" ry="2.5" transform="rotate(60 130 125)"/></g></g>
+</svg>

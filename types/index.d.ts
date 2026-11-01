@@ -15,6 +15,6 @@ export type Theme = {
 
 declare module 'claude-code' {
   interface PluginState {
-    'desktop-themes': { current: string; setup: 'missing' | 'restart' | 'ready'; motion: 'smooth' | 'grid'; speed: number; cell: number; veil: number; isStripOpen: boolean }
+    'claude-desktop-themes': { current: string; setup: 'missing' | 'restart' | 'ready'; motion: 'smooth' | 'grid'; speed: number; cell: number; veil: number; isStripOpen: boolean }
   }
 }

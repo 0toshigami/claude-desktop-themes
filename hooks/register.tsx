@@ -9,22 +9,22 @@ import { THEMES, parseUserTheme, tile } from './themes'
 // on macOS it is ~/Library/Application Support/Claude/extensions/<id> (not tested),
 // with REACT_PROFILE set by launchctl setenv
 const SLOT = 'Claude\\extensions\\fmkadmapgofadopljbjfkapdkoienihi'
-const current = atom({ plugin: 'desktop-themes', key: 'current' } as const, 'claude')
+const current = atom({ plugin: 'claude-desktop-themes', key: 'current' } as const, 'claude')
 // missing: no extension; restart: copied, but Claude Desktop has not loaded it yet
 type Setup = 'missing' | 'restart' | 'ready'
-const setup = atom({ plugin: 'desktop-themes', key: 'setup' } as const, 'missing' as Setup)
+const setup = atom({ plugin: 'claude-desktop-themes', key: 'setup' } as const, 'missing' as Setup)
 type Motion = 'smooth' | 'grid'
 type Look = { motion: Motion; speed: number; cell: number; veil: number }
 const LOOK: Look = { motion: 'grid', speed: 4, cell: 14, veil: .4 }
-const motion = atom({ plugin: 'desktop-themes', key: 'motion' } as const, LOOK.motion)
+const motion = atom({ plugin: 'claude-desktop-themes', key: 'motion' } as const, LOOK.motion)
 const MOTIONS: Record<Motion, string> = { smooth: 'Smooth', grid: 'Cell by cell' }
-const speed = atom({ plugin: 'desktop-themes', key: 'speed' } as const, LOOK.speed)
+const speed = atom({ plugin: 'claude-desktop-themes', key: 'speed' } as const, LOOK.speed)
 const SPEEDS = [1, 2, 4, 8, 16]
-const cell = atom({ plugin: 'desktop-themes', key: 'cell' } as const, LOOK.cell)
+const cell = atom({ plugin: 'claude-desktop-themes', key: 'cell' } as const, LOOK.cell)
 const CELLS: Record<number, string> = { 14: 'Small', 18: 'Medium', 22: 'Large' }
-const veil = atom({ plugin: 'desktop-themes', key: 'veil' } as const, LOOK.veil)
+const veil = atom({ plugin: 'claude-desktop-themes', key: 'veil' } as const, LOOK.veil)
 const VEILS = [0, .2, .4, .6, .8]
-const isStripOpen = atom({ plugin: 'desktop-themes', key: 'isStripOpen' } as const, false)
+const isStripOpen = atom({ plugin: 'claude-desktop-themes', key: 'isStripOpen' } as const, false)
 
 const slot = async ($: EngineInterface) => {
   const appData = await $.env.get('APPDATA')
@@ -40,7 +40,7 @@ const statusOf = (t: Theme | undefined, kind: 'idle' | 'tool' | 'error' | 'done'
   t?.status?.[kind].split('{tool}').join(tool)
 
 let mine: Theme[] = []
-const MINE = '.claude\\desktop-themes'
+const MINE = '.claude\\claude-desktop-themes'
 const loadMine = async ($: EngineInterface) => {
   const home = await $.env.get('USERPROFILE')
   const dir = home && `${home}\\${MINE}`

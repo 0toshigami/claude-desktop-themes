@@ -2,5 +2,5 @@
   "name": "claude-desktop-themes",
   "owner": { "name": "0toshigami" },
   "description": "Themes and live ASCII wallpapers for Claude Desktop",
-  "plugins": [{ "name": "desktop-themes", "source": "./" }]
+  "plugins": [{ "name": "claude-desktop-themes", "source": "./" }]
 }

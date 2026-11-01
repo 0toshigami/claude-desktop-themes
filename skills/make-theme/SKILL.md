@@ -1,11 +1,11 @@
 ---
 name: make-theme
-description: Make a new Claude Desktop theme for the desktop-themes mod, in the style of its own themes, from a text idea, a reference image, or both. Use when the person asks to create, design or make their own theme, color scheme or live ASCII wallpaper for Claude Desktop. Drafts the idea as an Artifact for the person to approve before anything is built.
+description: Make a new Claude Desktop theme for the Claude Desktop Themes mod, in the style of its own themes, from a text idea, a reference image, or both. Use when the person asks to create, design or make their own theme, color scheme or live ASCII wallpaper for Claude Desktop. Drafts the idea as an Artifact for the person to approve before anything is built.
 ---
 
 # Make a theme
 
-This skill makes a theme for the desktop-themes mod. The mod's root is two folders up from this file (`../..`).
+This skill makes a theme for the Claude Desktop Themes mod. The mod's root is two folders up from this file (`../..`).
 Before you start, read `hooks/themes.ts` there: its themes are the style to follow.
 
 ## 1. Find out which kind of theme
@@ -58,7 +58,7 @@ draft.
 ### A simple theme
 
 1. Write `<id>.json`, and `<id>.css` if the theme has a stylesheet, to the person's themes folder:
-   `%USERPROFILE%\.claude\desktop-themes\` on Windows. Create the folder if it is not there.
+   `%USERPROFILE%\.claude\claude-desktop-themes\` on Windows. Create the folder if it is not there.
 2. Tell the person to run `/themes`. The strip reads the folder each time it opens, and the theme shows in the
    "Your themes" row. A press on its name puts it on, with no restart.
 

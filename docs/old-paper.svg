@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="140" viewBox="0 0 240 140">
+<clipPath id="w"><rect width="240" height="140" rx="10"/></clipPath><g clip-path="url(#w)">
+<rect width="240" height="140" fill="#f2e9d6"/>
+<rect width="56" height="140" fill="#ebe2cf"/>
+<rect x="9" y="14" width="38" height="6" rx="3" fill="#a5522c"/>
+<rect x="9" y="28" width="32" height="5" rx="2.5" fill="#9f9585"/>
+<rect x="9" y="39" width="36" height="5" rx="2.5" fill="#9f9585"/>
+<rect x="9" y="50" width="26" height="5" rx="2.5" fill="#9f9585"/>
+<rect x="148" y="12" width="82" height="22" rx="3" fill="#e0d6c4"/>
+<text x="158" y="27" font-family="Georgia, 'Times New Roman', serif" font-size="10" fill="#3a2f22">Hi, Claude!</text>
+<text x="66" y="54" font-family="Georgia, 'Times New Roman', serif" font-size="10" fill="#3a2f22">Hi! What shall we make?</text>
+<rect x="66" y="62" width="150" height="5" rx="2.5" fill="#9f9585"/>
+<rect x="66" y="72" width="120" height="5" rx="2.5" fill="#9f9585"/>
+<rect x="66" y="102" width="164" height="28" rx="4" fill="#e0d6c4" stroke="#c7bdac"/>
+<circle cx="216" cy="116" r="8" fill="#a5522c"/>
+<rect width="240" height="140" rx="10" fill="none" stroke="#8c5f32" stroke-width="10" opacity=".12"/></g>
+</svg>
