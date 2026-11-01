@@ -2,7 +2,7 @@
 
 Themes for Claude Desktop, applied live. Pick one from a strip above the prompt with `/themes`.
 
-<p align="center"><img src="docs/koi-pond.gif" width="720" alt="The Koi Pond live wallpaper: koi drawn in letter tiles swim across a green pond"></p>
+https://github.com/user-attachments/assets/32f4bfa8-eecc-4993-8b02-3a0960ac27c3
 
 ## Live ASCII wallpapers
 
@@ -66,6 +66,8 @@ claude plugin install claude-desktop-themes --marketplace 0toshigami/claude-desk
 1. If `/themes` does not show in the command list (often only `/make-theme` shows just after the install), type
    `/reload-plugins` and then `/reload-skills`.
 2. In a Claude Code session in Claude Desktop, type `/themes`. The theme strip opens above the prompt.
+   `/themes` works only inside a session. On the start page of **+ New**, typing `/themes` only starts a new
+   session; type `/themes` again in that session to open the strip.
 3. The first time, the strip shows only an **Install extension** button. Press it. It copies the extension that
    paints the themes into `%APPDATA%\Claude\extensions` and sets `REACT_PROFILE=1` for your Windows account, which
    makes Claude Desktop load it.
