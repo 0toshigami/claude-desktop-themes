@@ -1,14 +1,5 @@
-/* Every theme's, before its own css: the parts of Claude Desktop that paint a fixed color, not one of its tokens, so
-   the theme's colors miss them. Kept here, not in the extension, so a fix needs no restart: picking the theme again
-   rewrites it. --desktop-theme-backdrop is the theme's background a step toward its writing. */
-
-/* the sidebar: #1f1f1f in the dark mode, whatever the theme */
 .dframe-sidebar { background-color: var(--desktop-theme-backdrop) !important; }
 
-/* code blocks: <diffs-container> draws them in a shadow root, which the theme's rules do not reach, from four
-   variables its :host rule sets (white or black behind, near-black or near-white writing). A rule on the host from
-   out here wins over :host, and the variables pass into the shadow root. The syntax colors stay: each word carries
-   its own, for the light mode and the dark, and the theme's mode picks between them. */
 diffs-container {
   --diffs-light-bg: var(--cds-surface-2) !important;
   --diffs-dark-bg: var(--cds-surface-2) !important;
@@ -16,8 +7,6 @@ diffs-container {
   --diffs-dark: var(--cds-text-primary) !important;
 }
 
-/* the muted writing that skips --cds-text-muted: the sidebar's and the prompt box's (#ffffff91 in the dark mode:
-   the footer, "Pinned", times, the status line) and the shortcut keys' (#a4a4a4) */
 * {
   --muted-as-secondary: var(--cds-text-muted) !important;
   --df-sidebar-muted: var(--cds-text-muted) !important;

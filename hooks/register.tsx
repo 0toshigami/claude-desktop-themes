@@ -4,35 +4,28 @@ import type { EngineInterface, Register } from 'claude-code'
 import type { Theme } from '../types'
 import { THEMES, parseUserTheme, tile } from './themes'
 
-export { THEMES, tile }
-
-// The extension that paints Claude Desktop (extension/ here) sits in the React DevTools slot, which Claude Desktop
-// loads at startup while REACT_PROFILE=1. The theme strip installs it; picking a theme writes theme.json there, and
-// tool calls and turns write event.json, which it reads and turns into the theme's reactions.
-const SLOT = 'Claude\\extensions\\fmkadmapgofadopljbjfkapdkoienihi' // under %APPDATA%
+// Windows only (under %APPDATA%); 
+// on macOS it is ~/Library/Application Support/Claude/extensions/<id> (not tested),
+// with REACT_PROFILE set by launchctl setenv
+const SLOT = 'Claude\\extensions\\fmkadmapgofadopljbjfkapdkoienihi'
 const current = atom({ plugin: 'desktop-themes', key: 'current' } as const, 'claude')
 const isInstalled = atom({ plugin: 'desktop-themes', key: 'isInstalled' } as const, false)
 type Motion = 'smooth' | 'grid'
 const motion = atom({ plugin: 'desktop-themes', key: 'motion' } as const, 'smooth' as Motion)
-const MOTIONS: Record<Motion, string> = { smooth: 'Smooth', grid: 'Cell by cell' } // (the motion button goes round these)
+const MOTIONS: Record<Motion, string> = { smooth: 'Smooth', grid: 'Cell by cell' }
 const speed = atom({ plugin: 'desktop-themes', key: 'speed' } as const, 1)
-const SPEEDS = [1, 2, 4, 8, 16] // (the speed button goes round these)
+const SPEEDS = [1, 2, 4, 8, 16]
 const cell = atom({ plugin: 'desktop-themes', key: 'cell' } as const, 22)
-const CELLS: Record<number, string> = { 14: 'Small', 18: 'Medium', 22: 'Large' } // (and the size button these)
-// (the backdrop behind the chat's column: how much of the theme's background color covers the scene there)
+const CELLS: Record<number, string> = { 14: 'Small', 18: 'Medium', 22: 'Large' }
 const veil = atom({ plugin: 'desktop-themes', key: 'veil' } as const, .4)
 const VEILS = [0, .2, .4, .6, .8]
-// (the theme strip above the prompt, which /themes opens and closes)
 const isStripOpen = atom({ plugin: 'desktop-themes', key: 'isStripOpen' } as const, false)
 
-// ponytail: Windows only; on macOS the slot is ~/Library/Application Support/Claude/extensions/<id> and the variable
-// is set with launchctl setenv
 const slot = async ($: EngineInterface) => {
   const appData = await $.env.get('APPDATA')
   return appData && `${appData}\\${SLOT}`
 }
 
-// What theme.json holds for a theme, its stylesheet and how its wallpaper moves: no colors gives Claude's own back
 type Look = { motion: Motion; speed: number; cell: number; veil: number }
 export const fileOf = (t: Theme, css = '', look: Look = { motion: 'smooth', speed: 1, cell: 22, veil: .4 }) =>
   JSON.stringify(t.bg
@@ -40,12 +33,10 @@ export const fileOf = (t: Theme, css = '', look: Look = { motion: 'smooth', spee
     : {})
 
 const statusOf = (t: Theme | undefined, kind: 'idle' | 'tool' | 'error' | 'done', tool = '') =>
-  t?.status?.[kind].replace('{tool}', tool)
+  t?.status?.[kind].split('{tool}').join(tool)
 
-// The person's own themes (the make-theme skill writes them): <id>.json and <id>.css in their themes folder, read at
-// the session's start and each time /themes opens the strip; one with a built-in's id is left out
 let mine: Theme[] = []
-const MINE = '.claude\\desktop-themes' // (under the home folder)
+const MINE = '.claude\\desktop-themes'
 const loadMine = async ($: EngineInterface) => {
   const home = await $.env.get('USERPROFILE')
   const dir = home && `${home}\\${MINE}`
@@ -62,18 +53,14 @@ const loadMine = async ($: EngineInterface) => {
 }
 const allThemes = () => [...THEMES, ...mine]
 
-let n = Date.now() // (event.json's count: from the clock, so a reloaded module never repeats one)
+let n = Date.now() // (so a reloaded module never repeats an event number)
 const active = async ($: EngineInterface) => {
   const id = await read($, current)
   return id === 'claude' ? undefined : allThemes().find(t => t.id === id)
 }
-// The turn's state, which the theme shows while it lasts: thinking from the main loop's turn start, waiting while a
-// tool waits for the person's yes, idle from its end.
-// ponytail: one file for every session, so the last session to write wins; a theme per session would need its own
+// ponytail: one event.json for every session, so the last to write wins; per-session state needs a file each
 type State = 'thinking' | 'waiting' | 'idle'
 let state: State = 'idle'
-// Tells the extension what happened (kind, '' for a state change alone) and the state now; never in a tool's way:
-// not awaited, and a failed write is dropped
 const signal = ($: EngineInterface, kind: '' | 'tool' | 'error' | 'done', tool = '', now: State = state) => {
   state = now
   void (async () => {
@@ -88,8 +75,6 @@ const check = async ($: EngineInterface) => {
   await update($, isInstalled, () => String(manifest).includes('"theme.js"'))
 }
 
-// Puts the extension in the slot: theme.js beside whatever is there, its manifest merged into the one there (another
-// extension may sit in the slot already), and REACT_PROFILE=1 for the user
 const install = async ($: EngineInterface) => {
   const dir = await slot($)
   if (!dir) {
@@ -133,8 +118,6 @@ const pick = async ($: EngineInterface, t: Theme) => {
   $.ui.toast(`Theme: ${t.name}`)
 }
 
-// Steps a wallpaper setting to the next in its list (a value not in it goes to the first), and rewrites the theme on
-// now to take it (one update per atom: the engine reads which atom each update writes)
 const next = <T,>(list: T[]) => (v: T) => list[(list.indexOf(v) + 1) % list.length]!
 const repick = async ($: EngineInterface) => {
   const now = await active($)
@@ -147,7 +130,7 @@ const nextVeil = async ($: EngineInterface) => { await update($, veil, next(VEIL
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
-    // (not /theme: that one is Claude Code's own, for its terminal colors)
+    // (not /theme: Claude Code has its own)
     await $.command.register({ name: 'themes', description: 'Pick a theme for Claude Desktop' })
     try {
       await loadMine($).catch(() => {})
@@ -165,14 +148,11 @@ export const register: Register = on => {
 
   on('command.run', { command: 'themes' }, async $ => {
     await check($).catch(() => {})
-    await loadMine($).catch(() => {}) // (a theme the skill just wrote shows at once)
+    await loadMine($).catch(() => {})
     const open = await update($, isStripOpen, o => !o)
     return { text: open ? 'Theme strip opened above the prompt.' : 'Theme strip closed.' }
   })
 
-  // The theme strip: the theme on now in its heading, the wallpaper's settings under it while one is on (at the top,
-  // so they stay in sight above the tiles), then the live wallpapers and the color themes, each a tile with its name
-  // under it, a press on the name puts it on; Close or /themes again closes it
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     if (e.props.hasSurvey || !(await read($, isStripOpen))) return next(e)
     const els = $.ui.resolve(e)
@@ -185,7 +165,6 @@ export const register: Register = on => {
     const size = await read($, cell)
     const shade = await read($, veil)
     const worn = allThemes().find(t => t.id === now) ?? THEMES[0]!
-    // (a row of tiles under a small heading: the scene or window, the name under it to press)
     const row = (title: string, themes: Theme[]) => (
       <Box key={`row-${title}`} flexDirection="column" gap="xs">
         <Text dimColor>{title}</Text>
@@ -218,11 +197,11 @@ export const register: Register = on => {
           <Box flexDirection="row" gap={1} alignItems="center" flexWrap="wrap">
             <Text dimColor>Wallpaper:</Text>
             <Text dimColor>motion</Text>
-            <Button key="motion" label={MOTIONS[move] ?? 'Smooth'} onPress={() => toggleMotion($)} />
+            <Button key="motion" label={MOTIONS[move]} onPress={() => toggleMotion($)} />
             <Text dimColor>speed</Text>
             <Button key="speed" label={`${pace}×`} onPress={() => nextSpeed($)} />
             <Text dimColor>size</Text>
-            <Button key="cell" label={CELLS[size] ?? 'Large'} onPress={() => nextCell($)} />
+            <Button key="cell" label={CELLS[size]} onPress={() => nextCell($)} />
             <Text dimColor>chat backdrop</Text>
             <Button key="veil" label={shade ? `${Math.round(shade * 100)}%` : 'Off'} onPress={() => nextVeil($)} />
           </Box>
@@ -239,13 +218,12 @@ export const register: Register = on => {
     return next(e)
   })
 
-  // (asked: the person's dialog or auto mode's classifier decides; a real call only, not a query)
   on('tool.check', async ($, e, next) => {
     const verdict = await next(e)
     if (verdict.decision === 'ask' && e.tool_use_id && (await active($).catch(() => undefined)))
       signal($, '', e.tool, 'waiting')
     return verdict
-  }).catch(($, e, next) => next(e)) // (the check is the engine's: a failure here replays its verdict)
+  }).catch(($, e, next) => next(e))
 
   on('tool.call', async ($, e, next) => {
     const t = await active($).catch(() => undefined)
@@ -258,10 +236,10 @@ export const register: Register = on => {
       $.ui.status(statusOf(t, 'error', e.tool))
     }
     return result
-  }).catch(($, e, next) => next(e)) // (a theme never stops a tool: on a failure the call goes on, once)
+  }).catch(($, e, next) => next(e))
 
   on('turn.complete', async ($, e, next) => {
-    const t = e.agentId ? undefined : await active($).catch(() => undefined) // (a subagent's end is not the turn's)
+    const t = e.agentId ? undefined : await active($).catch(() => undefined)
     if (t) {
       signal($, 'done', '', 'idle')
       $.ui.status(statusOf(t, 'done'))

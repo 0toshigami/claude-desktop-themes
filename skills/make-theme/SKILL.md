@@ -67,14 +67,18 @@ that a built-in theme uses. Check these before you write the file.
 
 ### A live wallpaper
 
-1. Add the scene to `extension/theme.js` in the mod: its pictures and helpers before the line
-   `// A scene: cell, what stays in place`, and its entry in `SCENES`.
+1. Add the scene to `extension/theme.js` in the mod: its pictures and helpers before `const SCENES = {`, and its
+   entry in `SCENES`. An entry has `cell(x, y, cols, rows, t)`, which returns a tile `{ bg, fg, a }`, a loose
+   character `{ fg, a, ch? }`, or nothing. It also has `sprites(cols, rows, t)`, which returns
+   `[{ x, y, key, art, pal }]` or `[{ x, y, key, field, w, h }]`. A sprite can also have `a`, `shadow` and
+   `glow: { r, color, a }`. Only an `art` sprite can have `halo`. A cell can have `floor`: the least brightness it
+   keeps in the chat column. A scene can have `size`: the largest cell size in pixels.
 2. Add the theme to `THEMES` in `hooks/themes.ts` with `live(...)`, as the other wallpapers do. Its strip tile
    is a capture (step 4).
 3. Copy the new `extension/theme.js` over the installed one:
    `%APPDATA%\Claude\extensions\fmkadmapgofadopljbjfkapdkoienihi\theme.js`. Compare the two files' hashes after.
-4. Make the strip's tile from a capture of the real scene: run the scripts in `tools/thumbs/` (`pages.ts`, then
-   `capture.ps1 <id>`, then `embed.mjs`). They write `hooks/thumbs.ts`.
+4. Make the strip's tile from a capture of the real scene: run the scripts in `tools/thumbs/`: `npx tsx pages.ts`,
+   then `capture.ps1 <id>`, then `node embed.mjs`. They write `hooks/thumbs.ts`.
 5. Run `claude plugin validate` and `claude plugin test` on the mod folder.
 6. Tell the person to restart Claude Desktop, then pick the theme in `/themes`.
 

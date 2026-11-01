@@ -1,12 +1,3 @@
-// Builds a draft page of a theme: a small mock of Claude Desktop (sidebar, a message each way, the prompt box),
-// painted by the mod's real extension/theme.js the way Claude Desktop is, so the page shows the theme as it will look.
-// One self-contained HTML file, for an Artifact.
-//
-// node draft.mjs --theme <theme.json> [--css <theme.css>] [--theme-js <a copy of theme.js with a new scene>]
-//                [--start <seconds into the scene>] --out <draft.html>
-//
-// theme.json is a theme as the mod reads it: { id, name, tagline, bg, text, accent, font?, vars?, status?, deco? },
-// and for a live wallpaper also wallpaper (the scene's name in SCENES) and the wall-* vars.
 import { readFileSync, writeFileSync } from 'node:fs'
 
 const mod = new URL('../../', import.meta.url)
@@ -27,7 +18,6 @@ writeFileSync(need('out'), `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(theme.name)} Draft</title>
 <style>
-  /* the mock: Claude's parts, colored by the tokens theme.js sets, as Claude Desktop colors its own */
   html, body { margin: 0; height: 100%; overflow: hidden; }
   body { background: var(--cds-page-bg, #262624); color: var(--cds-text-primary, #f5f4ef);
     font: 14px/1.5 var(--cds-font-sans, system-ui, sans-serif); }

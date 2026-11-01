@@ -1,8 +1,3 @@
-/* Terminal: a green phosphor tube. Scanlines and a dark rim over the whole window, glowing writing, square corners
-   (its vars), a "> " before your own messages. Running a tool flickers the tube, a failed one reddens the rim, a
-   finished turn glows it green. While Claude works a bright band sweeps down the tube; while a tool waits for your
-   yes the rim pulses amber. */
-
 html::after {
   content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 2147483646;
   background: repeating-linear-gradient(to bottom, transparent 0 2px, rgba(0, 0, 0, .22) 2px 3px);
@@ -28,7 +23,6 @@ html[data-theme-event=done]::before {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(57, 232, 122, .35); border-radius: 0; }
 
-/* the states: one layer, a band near the top while thinking (still, under less motion), the rim while waiting */
 body::after {
   content: ""; position: fixed; left: 0; right: 0; top: 0; height: 140px; pointer-events: none; z-index: 2147483646;
   opacity: 0; transition: opacity .4s;
@@ -50,18 +44,13 @@ html[data-theme-state=waiting] body::after {
 @keyframes terminal-sweep { from { transform: translateY(-140px); } to { transform: translateY(100vh); } }
 @keyframes terminal-pulse { from { opacity: .4; } to { opacity: 1; } }
 
-/* The New session screen: Clawd in green phosphor inside an old CRT monitor, a boot line typing itself out beside
-   him, and now and then a glitch through the picture. [data-testid=start-card-clawd] holds him: 320px wide and 0px
-   tall, he stands on its right end. Its two pseudo-elements are the monitor and the line. */
 [data-testid=start-card-clawd] { filter: grayscale(1) sepia(1) hue-rotate(75deg) saturate(3) drop-shadow(0 0 4px rgba(57, 232, 122, .8)); }
 [data-testid=start-card-clawd]::before {
-  /* (he peeks over the card: his middle is about 16px above it and 31px in from the right) */
   content: ""; position: absolute; right: 6px; bottom: -4px; width: 50px; height: 40px; pointer-events: none;
   border: 2px solid rgba(57, 232, 122, .7); border-radius: 9px / 12px; background: rgba(57, 232, 122, .06);
   box-shadow: 0 0 12px rgba(57, 232, 122, .35), inset 0 0 10px rgba(57, 232, 122, .25);
 }
 [data-testid=start-card-clawd]::after {
-  /* (23 characters in 24ch: the app's letter spacing makes them a little wider than ch) */
   content: "> boot clawd.sys ... ok"; position: absolute; left: 0; bottom: 14px; width: 24ch; overflow: hidden;
   white-space: nowrap; font: 13px/1.2 "Cascadia Code", Consolas, monospace; color: #39e87a; pointer-events: none;
   text-shadow: 0 0 6px rgba(57, 232, 122, .5); border-right: .6ch solid #39e87a;
@@ -81,8 +70,6 @@ html[data-theme-state=waiting] body::after {
   95% { transform: translateX(1px) skewX(4deg); }
 }
 
-/* the prompt box: a shell line, black with a thin green rule, which lights up while you type and dims while Claude
-   works; a block caret where the browser draws one */
 [data-cds=ChatComposer] > .bg-surface-3 {
   background: #050a06 !important; transition: box-shadow .2s;
   box-shadow: 0 0 0 1px rgba(57, 232, 122, .45) !important;

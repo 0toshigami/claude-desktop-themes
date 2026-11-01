@@ -1,8 +1,3 @@
-/* Sunset Cloud: a dusk sky. A warm glow rises from the bottom of the window and soft clouds drift across it;
-   glowing corners (its vars). A running tool brightens the glow, a failed one turns it red, a finished turn
-   flares it gold. While Claude works the low sun breathes; while a tool waits for your yes a violet glow pulses at
-   the edges. */
-
 html::before {
   content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 2147483646; mix-blend-mode: screen;
   background: radial-gradient(120% 55% at 50% 115%, rgba(255, 138, 107, .28), transparent 65%);
@@ -30,8 +25,6 @@ html::after {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255, 138, 107, .35); border-radius: 9px; }
 
-/* the states: the low sun breathes while Claude works; a violet glow pulses at the edges while a tool waits for your
-   yes */
 body::after {
   content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 2147483646; opacity: 0;
   transition: opacity .8s; mix-blend-mode: screen;
@@ -50,10 +43,6 @@ html[data-theme-state=waiting] body::after {
 @keyframes sunset-drift { from { transform: translateX(0); } to { transform: translateX(600px); } }
 @keyframes sunset-breathe { from { opacity: .3; } to { opacity: 1; } }
 
-/* The New session screen: Clawd, in his own coral, floating on a cloud beside the setting sun, a greeting drawn in
-   beside him. [data-testid=start-card-clawd] holds him (320px by 0, he peeks over the card at its right end, his
-   middle about 16px up and 31px in); its ::before is the sun and the cloud, the cloud over his feet (z-index 1; the
-   sun stands clear of him); its ::after is the greeting. */
 [data-testid=start-card-clawd] > * { filter: drop-shadow(0 0 8px rgba(255, 138, 107, .55)); }
 [data-testid=start-card-clawd]::before {
   content: ""; position: absolute; right: -20px; bottom: -8px; width: 100px; height: 50px; pointer-events: none; z-index: 1;
@@ -62,7 +51,7 @@ html[data-theme-state=waiting] body::after {
 [data-testid=start-card-clawd]::after {
   content: "what shall we build tonight?"; position: absolute; left: 0; bottom: 12px; pointer-events: none;
   white-space: nowrap; font-size: 15px; color: #ffb27a;
-  max-width: calc(100% - 100px); overflow: hidden; text-overflow: ellipsis; /* (clear of him, the cloud and the sun) */
+  max-width: calc(100% - 100px); overflow: hidden; text-overflow: ellipsis;
 }
 @media (prefers-reduced-motion: no-preference) {
   html:not([data-reduce-motion=true]) [data-testid=start-card-clawd] > *,
@@ -72,7 +61,6 @@ html[data-theme-state=waiting] body::after {
 @keyframes sunset-float { from { translate: 0 -3px; } to { translate: 0 1px; } }
 @keyframes start-reveal { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 
-/* the prompt box: a rim that fades from dusk violet to coral; while Claude works the colors turn slowly around it */
 @property --sunset-turn { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
 [data-cds=ChatComposer] > .bg-surface-3 {
   border: 1.5px solid transparent !important; transition: box-shadow .3s;

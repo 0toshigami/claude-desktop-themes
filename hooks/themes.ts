@@ -1,8 +1,6 @@
 import type { Theme } from '../types'
 import { THUMBS } from './thumbs'
 
-// The themes. Each one's own stylesheet, if it has one, is themes/<id>.css: patterns over the window, decorations
-// on Claude's parts ([data-cds=AssistantMessage], ...) and reactions to html[data-theme-event=tool|error|done].
 export const THEMES: Theme[] = [
   { id: 'claude', name: 'Claude', tagline: "Claude's own colors" },
   {
@@ -42,7 +40,6 @@ export const THEMES: Theme[] = [
       'cds-shadow-sm': '0 0 0 1px rgba(57, 232, 122, .25)',
       'cds-shadow-md': '0 0 0 1px rgba(57, 232, 122, .35), 0 0 14px rgba(57, 232, 122, .15)',
       'cds-shadow-lg': '0 0 0 1px rgba(57, 232, 122, .45), 0 0 24px rgba(57, 232, 122, .2)',
-      // (snappy, not 0s: a transition of 0s never ends, and parts that wait for its end would stay)
       'cds-dur-base': '40ms', 'cds-dur-slow': '.1s',
     },
     status: { idle: '[SYS] online', tool: '[EXEC] {tool}', error: '[ERR] {tool} failed', done: '[SYS] done' },
@@ -73,8 +70,6 @@ export const THEMES: Theme[] = [
     status: { idle: '✒', tool: '✒ {tool}…', error: '✒ {tool}: a red ink blot', done: '✒ end of page' },
     deco: `<rect width="240" height="140" rx="10" fill="none" stroke="#8c5f32" stroke-width="10" opacity=".12"/>`,
   },
-  // The live wallpapers: a scene the extension draws behind the window (its name in the extension's SCENES), and the
-  // look themes/_wallpaper.css gives the page over it (wall-* vars)
   live('moonlit', 'Moonlit', 'A crescent moon, drifting clouds, twinkling stars',
     ['#0d1530', '#dbe2f5', '#d9c98f'], 'radial-gradient(120% 90% at 75% 10%, #1a2a5e, #0d1530 60%, #090f24)',
     'rgba(22, 32, 70, .6)', 'rgba(217, 201, 143, .3)', 'a quiet night to build ☾',
@@ -113,8 +108,6 @@ export const THEMES: Theme[] = [
     { idle: '☔', tool: '☔ {tool}…', error: '⚡ {tool} failed', done: '🌃 done' }),
 ]
 
-// A live wallpaper's theme: colors [bg, text, accent], the look over its scene and its status line (its strip tile is
-// its capture in THUMBS; without one, preview() draws it in its colors)
 function live(id: string, name: string, tagline: string, [bg, text, accent]: [string, string, string], sky: string,
   glass: string, rim: string, greet: string, status: NonNullable<Theme['status']>): Theme {
   return {
@@ -126,8 +119,6 @@ function live(id: string, name: string, tagline: string, [bg, text, accent]: [st
   }
 }
 
-// A sky with two soft upright bands of light over it, a of white at their brightest (as light falls through water or
-// haze)
 function bands(a: number, sky: string) {
   const w = (k: number) => `rgba(255, 255, 255, ${+(a * k).toFixed(3)})`
   return `linear-gradient(90deg, ${w(0)} 16%, ${w(1)} 25%, ${w(0)} 35%, ${w(0)} 66%, ${w(.7)} 77%, ${w(0)} 88%), ${sky}`
@@ -142,8 +133,6 @@ const mix = (a: string, b: string, k: number) =>
 const esc = (s: string) => s.replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`)
 const px = (v: string | undefined, fallback: number) => (v && /^\d+(\.\d+)?px$/.test(v) ? parseFloat(v) : fallback)
 
-// A small Claude window in the theme's colors and corners: sidebar, a message each way, the prompt box and its send
-// button, and the theme's own decoration on top
 export const preview = (t: Theme) => {
   const bg = t.bg ?? '#262624', text = t.text ?? '#f5f4ef', accent = t.accent ?? '#d97757'
   const side = mix(bg, text, .04), bubble = mix(bg, text, .1), muted = mix(text, bg, .55)
@@ -168,8 +157,6 @@ ${t.deco ?? ''}</g>
 </svg>`
 }
 
-// A person's own theme, from <id>.json in their themes folder (and <id>.css beside it): a simple theme only, its
-// fields checked as the extension checks them, so nothing it would refuse gets in; undefined for a file that is not one
 export const parseUserTheme = (json: string, css?: string): Theme | undefined => {
   let t: Record<string, unknown>
   try { t = JSON.parse(json) } catch { return undefined }
@@ -190,8 +177,6 @@ export const parseUserTheme = (json: string, css?: string): Theme | undefined =>
   }
 }
 
-// A tile for the strip: a wallpaper theme as its scene captured (THUMBS), any other as its small window; a ring in
-// its accent when on
 export const tile = (t: Theme, on: boolean) => {
   const ring = on ? `<rect x="2" y="2" width="236" height="136" rx="12" fill="none" stroke="${t.accent ?? '#d97757'}" stroke-width="5"/>` : ''
   const shot = t.wallpaper && THUMBS[t.wallpaper]
