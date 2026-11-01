@@ -576,8 +576,8 @@
   // the cell shows ({ bg, fg, a } a tile, { fg, a, ch? } a loose character, one of LOOSE unless ch) or nothing; and
   // sprites, what moves: (cols, rows, t) → [{ x, y (cells, between them too), key (its characters' own seed), and
   // either art and pal (a picture) or field, w and h (a shape worked out each frame: (gx, gy) of a cell in its w × h
-  // box → { c, sx?, sy? } its look and its character's seed, or nothing); a? (all its tiles' strength), halo? and
-  // haloCh? (the color and character of the loose characters round it), shadow? (the color of its tiles' shadow, a
+  // box → { c, sx?, sy? } its look and its character's seed, or nothing); a? (all its tiles' strength), halo? (a
+  // picture only: the color of the loose characters round it), shadow? (the color of its tiles' shadow, a
   // cell down and right), glow? ({ r cells, color #rrggbb, a } a soft light round its middle) }], drawn over the cells
   const SCENES = {
     // a crescent moon, clouds drifting in front of it, twinkling stars, and now and then a shooting star behind the
@@ -831,20 +831,6 @@
     ctx.fillText(c.ch ?? glyph(c.bg ? GLYPHS : LOOSE, sx, sy, w.time), px + CELL / 2, py + CELL / 2 + 1);
   };
 
-  // (the loose characters round a field sprite's tiles this frame: about half the empty cells beside them)
-  const haloFrom = cells => {
-    const on = new Set(cells.map(([x, y]) => `${x},${y}`)), seen = new Set(), out = [];
-    for (const [x, y] of cells)
-      for (let i = -1; i <= 1; i++)
-        for (let j = -1; j <= 1; j++) {
-          const id = `${x + i},${y + j}`;
-          if (on.has(id) || seen.has(id)) continue;
-          seen.add(id);
-          if (hash(x + i + 50, y + j + 50, 5) < .45) out.push([x + i, y + j]);
-        }
-    return out;
-  };
-
   const draw = w => {
     const { ctx, scene, time: t } = w, W = innerWidth, H = innerHeight, cols = Math.ceil(W / CELL), rows = Math.ceil(H / CELL);
     const now = performance.now();
@@ -891,8 +877,8 @@
         for (const [gx, gy, c] of cells)
           if (c.bg) put(w, ox + (gx + .8) * CELL, oy + (gy + .8) * CELL, { bg: s.shadow, fg: s.shadow, ch: '', a: .4 * m }, 0, 0);
       if (s.halo)
-        for (const [gx, gy] of s.art ? haloOf(s.art) : haloFrom(cells))
-          put(w, ox + gx * CELL, oy + gy * CELL, { fg: s.halo, a: .3 * m, ch: s.haloCh }, gx + k, gy);
+        for (const [gx, gy] of haloOf(s.art))
+          put(w, ox + gx * CELL, oy + gy * CELL, { fg: s.halo, a: .3 * m }, gx + k, gy);
       for (const [gx, gy, c, sx, sy] of cells) put(w, ox + gx * CELL, oy + gy * CELL, m === 1 ? c : { ...c, a: c.a * m }, sx, sy);
     }
     // (the backdrop: the theme's background color over the scene in the chat's column, theme.json's veil of it, its

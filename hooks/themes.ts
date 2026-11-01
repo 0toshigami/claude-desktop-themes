@@ -78,70 +78,47 @@ export const THEMES: Theme[] = [
   live('moonlit', 'Moonlit', 'A crescent moon, drifting clouds, twinkling stars',
     ['#0d1530', '#dbe2f5', '#d9c98f'], 'radial-gradient(120% 90% at 75% 10%, #1a2a5e, #0d1530 60%, #090f24)',
     'rgba(22, 32, 70, .6)', 'rgba(217, 201, 143, .3)', 'a quiet night to build ☾',
-    { idle: '☾', tool: '☾ {tool}…', error: '☁ {tool} failed', done: '✦ done' },
-    tiles(grid((x, y) => Math.hypot(x - 25, y - 4) <= 3.3 && Math.hypot(x - 26.4, y - 3.2) > 2.8), '#d9c98f', '#3a3524')
-    + tiles(grid((x, y) => ell(x, y, 16, 10, 5, 1.2) <= 1), '#7088d8', '#18214a', 'S')),
+    { idle: '☾', tool: '☾ {tool}…', error: '☁ {tool} failed', done: '✦ done' }),
   live('clawd', 'Clawd', 'A turning orange spark, drifting embers, Clawd on patrol',
     ['#1f1714', '#f2e6df', '#d97757'], bands(.04, 'radial-gradient(90% 80% at 70% 30%, #3a2219, #1f1714 55%, #150f0d)'),
     'rgba(46, 30, 24, .65)', 'rgba(217, 119, 87, .3)', 'what shall we spark today?',
-    { idle: '✳', tool: '✳ {tool}…', error: '✳ {tool} failed', done: '✳ done' },
-    tiles(grid((x, y) => {
-      const dx = x - 23, dy = y - 6, r = Math.hypot(dx, dy)
-      return r <= 1.2 || (r <= 4.5 && (dx === 0 || dy === 0 || Math.abs(dx) === Math.abs(dy)))
-    }), '#d97757', '#3b1d12', '%')
-    + tiles(grid((x, y) => y >= 13 && y <= 15 && x >= 12 && x <= 18 && !(y === 15 && x % 2 === 1)), '#d97757', '#3b1d12', '#')
-    + tiles([[13, 13], [17, 13]], '#2a1a14', '#d97757', 'o')),
+    { idle: '✳', tool: '✳ {tool}…', error: '✳ {tool} failed', done: '✳ done' }),
   live('cloud-drift', 'Cloud Drift', 'White clouds over a bright sky, birds gliding by',
     ['#d8ecfa', '#1d3447', '#2f78bd'], bands(.22, 'linear-gradient(#4fa3e8, #86c3f0 55%, #b6dbf6)'),
     'rgba(255, 255, 255, .6)', 'rgba(47, 120, 189, .3)', 'blue skies ahead',
-    { idle: '☁', tool: '☁ {tool}…', error: '☂ {tool} failed', done: '☀ done' },
-    tiles(grid((x, y) => ell(x, y, 22, 4, 4.5, 1.3) <= 1 || ell(x, y, 13, 11, 4, 1.1) <= 1), '#ffffff', '#9db3c6', ':')),
+    { idle: '☁', tool: '☁ {tool}…', error: '☂ {tool} failed', done: '☀ done' }),
   live('honu-lagoon', 'Honu Lagoon', 'A sea turtle swimming across a lagoon, light rays and bubbles',
     ['#0f3a44', '#e3f6f2', '#5fd0b8'], bands(.14, 'linear-gradient(#35a6f0, #1d7ad8 45%, #1650b2)'),
     'rgba(15, 58, 68, .6)', 'rgba(95, 208, 184, .3)', 'swim along, slow and steady',
-    { idle: '🐢', tool: '🐢 {tool}…', error: '🫧 {tool} failed', done: '🐢 done' },
-    tiles(grid((x, y) => ell(x, y, 19, 8, 3, 1.6) <= 1), '#7d9a3e', '#253012', 'X')
-    + tiles(grid((x, y) => ell(x, y, 23, 8, .8, .6) <= 1 || ell(x, y, 20, 5.5, 1.2, .5) <= 1 || ell(x, y, 20, 10.5, 1.2, .5) <= 1), '#a3c06e', '#253012')),
+    { idle: '🐢', tool: '🐢 {tool}…', error: '🫧 {tool} failed', done: '🐢 done' }),
   live('koi-pond', 'Koi Pond', 'Koi circling a pond between lily pads, rings on the water',
     ['#11332d', '#e4f2ea', '#ef8a4a'], bands(.12, 'linear-gradient(175deg, #4aa08c, #2f8070 50%, #1f6156)'),
     'rgba(17, 51, 45, .6)', 'rgba(239, 138, 74, .3)', 'still water, clear mind',
-    { idle: '◌', tool: '◌ {tool}…', error: '◌ {tool} failed', done: '◎ done' },
-    tiles(grid((x, y) => ell(x, y, 19, 9, 2.6, 1) <= 1 || (x === 15 && Math.abs(y - 9) <= 1)), '#e8742c', '#4a1d08')
-    + tiles(grid((x, y) => ell(x, y, 26, 4, 2, 1.4) <= 1), '#4f8a3c', '#1d3a14', 'S')),
+    { idle: '◌', tool: '◌ {tool}…', error: '◌ {tool} failed', done: '◎ done' }),
   live('jellyfish', 'Jellyfish', 'Jellyfish rising through deep water, bells pulsing',
     ['#0a1830', '#dfe7fb', '#a58cf0'], bands(.07, 'linear-gradient(#174784, #0c2b58 50%, #071a3a)'),
     'rgba(12, 28, 58, .6)', 'rgba(165, 140, 240, .3)', 'drifting into deep work',
-    { idle: '◠', tool: '◠ {tool}…', error: '◠ {tool} failed', done: '◠ done' },
-    tiles(grid((x, y) => (y <= 5 && ell(x, y, 22, 5, 3.2, 2.2) <= 1) || (y > 5 && y < 11 && (x === 20 || x === 22 || x === 24))), '#9a7fe0', '#1a1033', '%')),
+    { idle: '◠', tool: '◠ {tool}…', error: '◠ {tool} failed', done: '◠ done' }),
   live('lantern-night', 'Lantern Night', 'Paper lanterns drifting down a river at night',
     ['#0b1424', '#efe6d2', '#f2a541'], 'linear-gradient(#070c1c, #24305e 29%, #0e1a30 30%, #08111f 60%, #050a14)',
     'rgba(11, 20, 36, .6)', 'rgba(242, 165, 65, .3)', 'let your ideas drift',
-    { idle: '🏮', tool: '🏮 {tool}…', error: '🏮 {tool} went out', done: '🏮 done' },
-    tiles(grid((x, y) => y === 4 && x >= 7), '#04070e', '#131c30', ' ')
-    + tiles(grid((x, y) => y === 7 && Math.abs(x - 20) <= 2), '#3a1a14', '#170905', ' ')
-    + tiles(grid((x, y) => y >= 8 && y <= 10 && Math.abs(x - 20) <= 1), '#ffd889', '#c46a1c', 'S')
-    + tiles(grid((x, y) => y === 11 && Math.abs(x - 20) <= 2), '#4a2e1c', '#1e120a', ' ')
-    + tiles([[26, 6], [12, 6], [27, 5]], '#f4a347', '#7a3a0c', 't')),
+    { idle: '🏮', tool: '🏮 {tool}…', error: '🏮 {tool} went out', done: '🏮 done' }),
   live('fireflies', 'Fireflies', 'Fireflies wandering and blinking over tall grass',
     ['#0b130e', '#e3eedc', '#d8e86a'], bands(.03, 'radial-gradient(120% 80% at 50% 110%, #1b3522, #0c1710 60%, #070c09)'),
     'rgba(14, 26, 18, .65)', 'rgba(216, 232, 106, .28)', 'a warm glow for late work',
-    { idle: '✧', tool: '✧ {tool}…', error: '✧ {tool} failed', done: '✦ done' },
-    tiles([[12, 4], [19, 7], [26, 3], [23, 11], [9, 9]], '#e6f26e', '#2c3308')
-    + tiles(grid((x, y) => y >= 15), '#3f7d3c', '#16300f', 'S')),
+    { idle: '✧', tool: '✧ {tool}…', error: '✧ {tool} failed', done: '✦ done' }),
   live('neon-rain', 'Neon Rain', 'Rain over a city at night, neon signs buzzing, umbrellas passing by',
     ['#0c1020', '#e3e8f6', '#ff5fa2'], 'linear-gradient(#05070f, #0b1024 40%, #1e1838 75%, #34203f)',
     'rgba(12, 16, 32, .6)', 'rgba(255, 95, 162, .3)', 'rain outside, code inside',
-    { idle: '☔', tool: '☔ {tool}…', error: '⚡ {tool} failed', done: '🌃 done' },
-    tiles(grid((x, y) => (y >= 8 && (x <= 10 || x >= 26)) || (y >= 13 && x > 10 && x < 26)), '#1b2242', '#2b355a', 'S')
-    + tiles([[8, 10], [10, 12], [27, 9], [28, 12], [14, 14], [22, 14]], '#f3c56b', '#6a4a10')
-    + tiles(grid((x, y) => x === 11 && y >= 9 && y <= 12), '#1c0b1a', '#ff5fa2', 'N')),
+    { idle: '☔', tool: '☔ {tool}…', error: '⚡ {tool} failed', done: '🌃 done' }),
 ]
 
-// A live wallpaper's theme: colors [bg, text, accent], the look over its scene, its status line and preview tiles
+// A live wallpaper's theme: colors [bg, text, accent], the look over its scene and its status line (its strip tile is
+// its capture in THUMBS; without one, preview() draws it in its colors)
 function live(id: string, name: string, tagline: string, [bg, text, accent]: [string, string, string], sky: string,
-  glass: string, rim: string, greet: string, status: NonNullable<Theme['status']>, deco: string): Theme {
+  glass: string, rim: string, greet: string, status: NonNullable<Theme['status']>): Theme {
   return {
-    id, name, tagline, bg, text, accent, wallpaper: id, status, deco,
+    id, name, tagline, bg, text, accent, wallpaper: id, status,
     vars: {
       'cds-radius': '8px', 'cds-radius-composer': '16px', 'cds-panel-radius': '14px',
       'wall-sky': sky, 'wall-halo': bg, 'wall-glass': glass, 'wall-rim': rim, 'wall-greet': JSON.stringify(greet),
@@ -154,21 +131,6 @@ function live(id: string, name: string, tagline: string, [bg, text, accent]: [st
 function bands(a: number, sky: string) {
   const w = (k: number) => `rgba(255, 255, 255, ${+(a * k).toFixed(3)})`
   return `linear-gradient(90deg, ${w(0)} 16%, ${w(1)} 25%, ${w(0)} 35%, ${w(0)} 66%, ${w(.7)} 77%, ${w(0)} 88%), ${sky}`
-}
-
-// Preview tiles, as the wallpapers draw them, on an 8px grid over the preview's window (30 by 17 cells; the first 7
-// are its sidebar)
-function ell(x: number, y: number, cx: number, cy: number, rx: number, ry: number) {
-  return ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2
-}
-function grid(inside: (x: number, y: number) => boolean) {
-  const cells: [number, number][] = []
-  for (let y = 0; y < 17; y++) for (let x = 7; x < 30; x++) if (inside(x, y)) cells.push([x, y])
-  return cells
-}
-function tiles(cells: [number, number][], fill: string, ink: string, ch = 't') {
-  return `<g font-family="Consolas, monospace" font-size="7" font-weight="bold" text-anchor="middle">${cells.map(([x, y]) =>
-    `<rect x="${x * 8 + .5}" y="${y * 8 + .5}" width="7" height="7" rx="1" fill="${fill}"/><text x="${x * 8 + 4}" y="${y * 8 + 6.5}" fill="${ink}">${ch}</text>`).join('')}</g>`
 }
 
 const mix = (a: string, b: string, k: number) =>

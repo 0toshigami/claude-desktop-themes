@@ -69,8 +69,8 @@ that a built-in theme uses. Check these before you write the file.
 
 1. Add the scene to `extension/theme.js` in the mod: its pictures and helpers before the line
    `// A scene: cell, what stays in place`, and its entry in `SCENES`.
-2. Add the theme to `THEMES` in `hooks/themes.ts` with `live(...)`, as the other wallpapers do. Its `deco` is the
-   preview tile drawing for terminals; the strip on the desktop uses a capture (step 4).
+2. Add the theme to `THEMES` in `hooks/themes.ts` with `live(...)`, as the other wallpapers do. Its strip tile
+   is a capture (step 4).
 3. Copy the new `extension/theme.js` over the installed one:
    `%APPDATA%\Claude\extensions\fmkadmapgofadopljbjfkapdkoienihi\theme.js`. Compare the two files' hashes after.
 4. Make the strip's tile from a capture of the real scene: run the scripts in `tools/thumbs/` (`pages.ts`, then

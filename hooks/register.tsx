@@ -2,9 +2,9 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { Theme } from '../types'
-import { THEMES, parseUserTheme, preview, tile } from './themes'
+import { THEMES, parseUserTheme, tile } from './themes'
 
-export { THEMES, preview, tile }
+export { THEMES, tile }
 
 // The extension that paints Claude Desktop (extension/ here) sits in the React DevTools slot, which Claude Desktop
 // loads at startup while REACT_PROFILE=1. The theme strip installs it; picking a theme writes theme.json there, and
@@ -129,33 +129,21 @@ const pick = async ($: EngineInterface, t: Theme) => {
   await $.fs.write(`${dir}\\theme.json`, fileOf(t, `${await css('_base')}\n${wall}\n${t.css ?? (await css(t.id))}`,
     { motion: await read($, motion), speed: await read($, speed), cell: await read($, cell), veil: await read($, veil) }))
   await update($, current, () => t.id)
-  $.ui.status(statusOf(t.bg ? t : undefined, 'idle'))
+  $.ui.status(statusOf(t, 'idle'))
   $.ui.toast(`Theme: ${t.name}`)
 }
 
-// Switches how the wallpapers move, or steps their speed to the next, and rewrites the theme on now to take it
-const toggleMotion = async ($: EngineInterface) => {
-  const all = Object.keys(MOTIONS) as Motion[]
-  await update($, motion, m => all[(all.indexOf(m) + 1) % all.length] ?? 'smooth')
+// Steps a wallpaper setting to the next in its list (a value not in it goes to the first), and rewrites the theme on
+// now to take it (one update per atom: the engine reads which atom each update writes)
+const next = <T,>(list: T[]) => (v: T) => list[(list.indexOf(v) + 1) % list.length]!
+const repick = async ($: EngineInterface) => {
   const now = await active($)
   if (now) await pick($, now)
 }
-const nextSpeed = async ($: EngineInterface) => {
-  await update($, speed, s => SPEEDS[(SPEEDS.indexOf(s) + 1) % SPEEDS.length] ?? 1)
-  const now = await active($)
-  if (now) await pick($, now)
-}
-const nextCell = async ($: EngineInterface) => {
-  const sizes = Object.keys(CELLS).map(Number)
-  await update($, cell, c => sizes[(sizes.indexOf(c) + 1) % sizes.length] ?? 22)
-  const now = await active($)
-  if (now) await pick($, now)
-}
-const nextVeil = async ($: EngineInterface) => {
-  await update($, veil, v => VEILS[(VEILS.indexOf(v) + 1) % VEILS.length] ?? .4)
-  const now = await active($)
-  if (now) await pick($, now)
-}
+const toggleMotion = async ($: EngineInterface) => { await update($, motion, next(Object.keys(MOTIONS) as Motion[])); await repick($) }
+const nextSpeed = async ($: EngineInterface) => { await update($, speed, next(SPEEDS)); await repick($) }
+const nextCell = async ($: EngineInterface) => { await update($, cell, next(Object.keys(CELLS).map(Number))); await repick($) }
+const nextVeil = async ($: EngineInterface) => { await update($, veil, next(VEILS)); await repick($) }
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
