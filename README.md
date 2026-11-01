@@ -45,12 +45,12 @@ belong to Anthropic.
 ## Install
 
 In Claude Desktop: open **Settings → Plugins**, press **Add → Add marketplace**, enter
-`https://github.com/0toshigami/claude-desktop-themes.git`, then install **claude-desktop-themes** from it.
+`https://github.com/0toshigami/claude-desktop-themes.git`, then install **themes-for-claude** from it.
 
 Or, at the prompt of a Claude Code terminal session:
 
 ```
-/plugin install claude-desktop-themes --marketplace 0toshigami/claude-desktop-themes
+/plugin install themes-for-claude --marketplace 0toshigami/claude-desktop-themes
 ```
 
 Answer `y` to add the marketplace, then pick a scope.
@@ -58,7 +58,7 @@ Answer `y` to add the marketplace, then pick a scope.
 From a shell:
 
 ```bash
-claude plugin install claude-desktop-themes --marketplace 0toshigami/claude-desktop-themes
+claude plugin install themes-for-claude --marketplace 0toshigami/claude-desktop-themes
 ```
 
 ## First use
@@ -76,10 +76,11 @@ claude plugin install claude-desktop-themes --marketplace 0toshigami/claude-desk
 
 ## Your own themes
 
-- **Simple themes** go into `%USERPROFILE%\.claude\claude-desktop-themes\` as `<id>.json`, with an optional `<id>.css`.
+- **Simple themes** go into `%USERPROFILE%\.claude\themes-for-claude\` as `<id>.json`, with an optional `<id>.css`.
   They show in the strip's "Your themes" row, and an update of the mod does not remove them.
-- **Live wallpapers** are code, so the skill adds them to the mod's own files. An update of the mod replaces those
-  files: keep a copy of yours.
+- **Live wallpapers** go into the same folder: `<id>.json` with `"wallpaper": "<id>"`, and the scene as `<id>.js`.
+  The `make-theme` skill builds the scene into the extension when you approve it (or the next `/themes` does, for a
+  scene you added by hand); restart Claude Desktop to see it.
 
 ## Uninstall
 
@@ -89,11 +90,11 @@ Uninstalling the plugin removes only its commands. The extension in `%APPDATA%` 
    `%APPDATA%\Claude\extensions\fmkadmapgofadopljbjfkapdkoienihi`. If no other mod uses that folder, it also removes
    the folder and the `REACT_PROFILE` variable. If another mod uses the folder, it keeps both.
 2. Restart Claude Desktop.
-3. Uninstall the plugin: in **Settings → Plugins**, or with `claude plugin uninstall claude-desktop-themes`.
+3. Uninstall the plugin: in **Settings → Plugins**, or with `claude plugin uninstall themes-for-claude`.
 4. Optional: remove the marketplace too, which deletes its copy in `%USERPROFILE%\.claude\plugins\marketplaces`. Use
    **Settings → Plugins → Add → Manage marketplaces**, or `claude plugin marketplace remove claude-desktop-themes`.
 
-Your own themes in `%USERPROFILE%\.claude\claude-desktop-themes\` stay. Delete that folder if you do not want them.
+Your own themes in `%USERPROFILE%\.claude\themes-for-claude\` stay. Delete that folder if you do not want them.
 
 If you uninstalled the plugin first, remove the extension by hand in PowerShell. The folder can hold other mods
 too, so this deletes the folder and the variable only when the folder holds this mod alone:
@@ -108,8 +109,10 @@ if (((Get-Content "$d\manifest.json" -Raw | ConvertFrom-Json).content_scripts.js
 ## Safety
 
 A theme's stylesheet goes on your logged-in Claude page, so the extension refuses any stylesheet that loads something
-from outside it: no `@import`, and no `url()` except `data:`. Theme files are data only. Only the extension's own
-code draws the live wallpapers.
+from outside it: no `@import`, and no `url()` except `data:`. A theme's `.json` and `.css` are data only.
+
+A live wallpaper's scene (`<id>.js`) is code, and it runs on your logged-in Claude page. Keep only scene files that
+you made or that you trust, the same as any other code you run.
 
 ## Thanks
 

@@ -16,9 +16,10 @@ There are two kinds. If the person did not say which kind, explain both and ask 
   decorations and reactions (a glow while a tool runs, a shake on an error). It is data only. It goes into the
   person's own themes folder, shows in the `/themes` strip at once, and a mod update never removes it.
 - **Live wallpaper.** All of the above, plus an animated ASCII scene behind the window, drawn by the extension (like
-  Moonlit, Koi Pond or Lantern Night). A scene is code, so it goes into the mod's own files. Tell the person three
-  things: Claude Desktop needs a restart to show it; a mod update can overwrite it, so they keep their own copy; and
-  it takes longer to make, with a few rounds of review.
+  Moonlit, Koi Pond or Lantern Night). It also goes into the person's own themes folder, with its scene as a `.js`
+  file beside it, and a mod update never removes it. Tell the person three things: Claude Desktop needs a restart to
+  show it; the scene is code that runs on their Claude page, so they should only add scene files they trust; and it
+  takes longer to make, with a few rounds of review.
 
 ## 2. Read the references
 
@@ -58,7 +59,7 @@ draft.
 ### A simple theme
 
 1. Write `<id>.json`, and `<id>.css` if the theme has a stylesheet, to the person's themes folder:
-   `%USERPROFILE%\.claude\claude-desktop-themes\` on Windows. Create the folder if it is not there.
+   `%USERPROFILE%\.claude\themes-for-claude\` on Windows. Create the folder if it is not there.
 2. Tell the person to run `/themes`. The strip reads the folder each time it opens, and the theme shows in the
    "Your themes" row. A press on its name puts it on, with no restart.
 
@@ -67,19 +68,21 @@ that a built-in theme uses. Check these before you write the file.
 
 ### A live wallpaper
 
-1. Copy the approved scene to `extension/src/scenes/<id>.js` in the mod. A scene file holds its own pictures and
+Do not change the mod's own files: the theme belongs to the person, not to the mod.
+
+1. Copy the approved scene to `<id>.js` in the person's themes folder (see [A simple theme](#a-simple-theme)). A
+   scene file holds its own pictures and
    helpers, and ends with `SCENES['<id>'] = { ... }`. It can use the helpers in `extension/src/core.js`. The entry has `cell(x, y, cols, rows, t)`, which returns a tile `{ bg, fg, a }`, a loose
    character `{ fg, a, ch? }`, or nothing. It also has `sprites(cols, rows, t)`, which returns
    `[{ x, y, key, art, pal }]` or `[{ x, y, key, field, w, h }]`. A sprite can also have `a`, `shadow` and
    `glow: { r, color, a }`. Only an `art` sprite can have `halo`. A cell can have `floor`: the least brightness it
    keeps in the chat column. A scene can have `size`: the largest cell size in pixels.
-2. Add the theme to `THEMES` in `hooks/themes.ts` with `live(...)`, as the other wallpapers do. Its strip tile
-   is a capture (step 4).
-3. Run `node "<the mod's root>/tools/build.mjs"`. It builds `theme.js` from `extension/src` into the installed extension.
-4. Make the strip's tile from a capture of the real scene: run the scripts in `tools/thumbs/`: `npx tsx pages.ts`,
-   then `capture.ps1 <id>`, then `node embed.mjs`. They write `hooks/thumbs.ts`.
-5. Run `claude plugin validate` and `claude plugin test` on the mod folder.
-6. Tell the person to restart Claude Desktop, then pick the theme in `/themes`.
+2. Write the theme as `<id>.json` beside it, with `"wallpaper": "<id>"` (the theme's own id: the mod refuses any
+   other) and the `wall-*` vars that `live()` in `hooks/themes.ts` sets. Its strip tile is drawn from its colors
+   and `deco`.
+3. Build the scene into the extension: `node "<the mod's root>/tools/build.mjs"`. It takes the mod's scenes and
+   every scene in the person's folder.
+4. Tell the person to restart Claude Desktop, then pick the theme in `/themes`, in the "Your themes" row.
 
 ## The theme file
 

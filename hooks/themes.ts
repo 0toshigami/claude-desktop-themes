@@ -158,7 +158,8 @@ ${t.deco ?? ''}</g>
 </svg>`
 }
 
-export const parseUserTheme = (json: string, css?: string): Theme | undefined => {
+// scene: the person's own <id>.js sits beside the file, so a wallpaper named after the theme's own id is kept
+export const parseUserTheme = (json: string, css?: string, scene = false): Theme | undefined => {
   let t: Record<string, unknown>
   try { t = JSON.parse(json) } catch { return undefined }
   const str = (v: unknown, max: number) => typeof v === 'string' && v.length > 0 && v.length <= max
@@ -172,6 +173,7 @@ export const parseUserTheme = (json: string, css?: string): Theme | undefined =>
     ? { idle: String(s.idle), tool: String(s.tool), error: String(s.error), done: String(s.done) } : undefined
   return {
     id: t.id, name: String(t.name), tagline: str(t.tagline, 200) ? String(t.tagline) : '',
+    wallpaper: scene && t.wallpaper === t.id ? t.id : undefined,
     bg: String(t.bg), text: String(t.text), accent: String(t.accent),
     font: str(t.font, 200) ? String(t.font) : undefined, vars, status,
     deco: str(t.deco, 40000) ? String(t.deco) : undefined, css: css || undefined,

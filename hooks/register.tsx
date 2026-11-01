@@ -9,22 +9,22 @@ import { THEMES, parseUserTheme, tile } from './themes'
 // on macOS it is ~/Library/Application Support/Claude/extensions/<id> (not tested),
 // with REACT_PROFILE set by launchctl setenv
 const SLOT = 'Claude\\extensions\\fmkadmapgofadopljbjfkapdkoienihi'
-const current = atom({ plugin: 'claude-desktop-themes', key: 'current' } as const, 'claude')
+const current = atom({ plugin: 'themes-for-claude', key: 'current' } as const, 'claude')
 // missing: no extension; restart: copied, but Claude Desktop has not loaded it yet
 type Setup = 'missing' | 'restart' | 'ready'
-const setup = atom({ plugin: 'claude-desktop-themes', key: 'setup' } as const, 'missing' as Setup)
+const setup = atom({ plugin: 'themes-for-claude', key: 'setup' } as const, 'missing' as Setup)
 type Motion = 'smooth' | 'grid'
 type Look = { motion: Motion; speed: number; cell: number; veil: number }
 const LOOK: Look = { motion: 'grid', speed: 4, cell: 14, veil: .4 }
-const motion = atom({ plugin: 'claude-desktop-themes', key: 'motion' } as const, LOOK.motion)
+const motion = atom({ plugin: 'themes-for-claude', key: 'motion' } as const, LOOK.motion)
 const MOTIONS: Record<Motion, string> = { smooth: 'Smooth', grid: 'Cell by cell' }
-const speed = atom({ plugin: 'claude-desktop-themes', key: 'speed' } as const, LOOK.speed)
+const speed = atom({ plugin: 'themes-for-claude', key: 'speed' } as const, LOOK.speed)
 const SPEEDS = [1, 2, 4, 8, 16]
-const cell = atom({ plugin: 'claude-desktop-themes', key: 'cell' } as const, LOOK.cell)
+const cell = atom({ plugin: 'themes-for-claude', key: 'cell' } as const, LOOK.cell)
 const CELLS: Record<number, string> = { 14: 'Small', 18: 'Medium', 22: 'Large' }
-const veil = atom({ plugin: 'claude-desktop-themes', key: 'veil' } as const, LOOK.veil)
+const veil = atom({ plugin: 'themes-for-claude', key: 'veil' } as const, LOOK.veil)
 const VEILS = [0, .2, .4, .6, .8]
-const isStripOpen = atom({ plugin: 'claude-desktop-themes', key: 'isStripOpen' } as const, false)
+const isStripOpen = atom({ plugin: 'themes-for-claude', key: 'isStripOpen' } as const, false)
 
 const slot = async ($: EngineInterface) => {
   const appData = await $.env.get('APPDATA')
@@ -40,20 +40,38 @@ const statusOf = (t: Theme | undefined, kind: 'idle' | 'tool' | 'error' | 'done'
   t?.status?.[kind].split('{tool}').join(tool)
 
 let mine: Theme[] = []
-const MINE = '.claude\\claude-desktop-themes'
-const loadMine = async ($: EngineInterface) => {
+const MINE = '.claude\\themes-for-claude'
+const mineDir = async ($: EngineInterface) => {
   const home = await $.env.get('USERPROFILE')
-  const dir = home && `${home}\\${MINE}`
+  return home && `${home}\\${MINE}`
+}
+// when Claude Desktop started (its oldest process; Claude Code's own sit under \claude-code\): a scene written after
+// that is not on its page until a restart. Infinity when unknown, so nothing reads as waiting
+let desktopStart: Promise<number> | undefined
+const startedAt = ($: EngineInterface) => desktopStart ??= $.process.run(['powershell', '-NoProfile', '-Command',
+  "(Get-Process claude | ? Path -notmatch '\\\\claude-code\\\\' | sort StartTime | select -First 1).StartTime.ToUniversalTime().Subtract([datetime]'1970-01-01').TotalMilliseconds"])
+  .then(r => Number(r.stdout.trim()) || Infinity, () => Infinity)
+// the person's wallpapers whose scene shows only after a restart
+let waiting = new Set<string>()
+
+const loadMine = async ($: EngineInterface) => {
+  const dir = await mineDir($)
   if (!dir || !(await $.fs.exists(dir))) return void (mine = [])
+  const files = await $.fs.list(dir)
+  const at = (name: string) => files.find(f => f.kind === 'file' && f.name === name)?.mtimeMs
   const found: Theme[] = []
-  for (const f of await $.fs.list(dir)) {
+  for (const f of files) {
     if (f.kind !== 'file' || !f.name.endsWith('.json')) continue
-    const cssPath = `${dir}\\${f.name.slice(0, -5)}.css`
-    const css = (await $.fs.exists(cssPath)) ? String(await $.fs.read(cssPath)) : undefined
-    const t = parseUserTheme(String(await $.fs.read(`${dir}\\${f.name}`)), css)
+    const id = f.name.slice(0, -5)
+    const css = at(`${id}.css`) ? String(await $.fs.read(`${dir}\\${id}.css`)) : undefined
+    const t = parseUserTheme(String(await $.fs.read(`${dir}\\${f.name}`)), css, at(`${id}.js`) !== undefined)
+    if (t?.wallpaper && t.id !== id) t.wallpaper = undefined // (its scene is <id>.js by the file's name)
     if (t && !THEMES.some(b => b.id === t.id)) found.push(t)
   }
   mine = found
+  const scenes = found.filter(t => t.wallpaper)
+  const start = scenes.length ? await startedAt($) : Infinity
+  waiting = new Set(scenes.filter(t => at(`${t.id}.js`)! > start).map(t => t.id))
 }
 const allThemes = () => [...THEMES, ...mine]
 
@@ -82,6 +100,28 @@ const check = async ($: EngineInterface) => {
     : loaded && was !== 'restart' ? 'ready' : 'restart')
 }
 
+// theme.js: the mod's scenes, then the person's own (<id>.js beside their <id>.json)
+const build = async ($: EngineInterface) => {
+  const ext = `${$.plugin.root}/extension`
+  const read = async (f: string) => String(await $.fs.read(f))
+  const scenes = (await $.fs.list(`${ext}/src/scenes`)).filter(f => f.kind === 'file' && f.name.endsWith('.js')).map(f => f.name).sort()
+  const dir = await mineDir($)
+  // (sorted as tools/build.mjs does, so a theme.js it built reads as current here)
+  const own = dir ? mine.filter(t => t.wallpaper).map(t => `${dir}\\${t.id}.js`).sort() : []
+  return assemble(await read(`${ext}/src/core.js`),
+    await Promise.all([...scenes.map(f => read(`${ext}/src/scenes/${f}`)), ...own.map(read)]), await read(`${ext}/src/engine.js`))
+}
+
+// a new or changed scene (the person's, or the mod's after an update) goes into theme.js; the page loads it at start
+const rebuild = async ($: EngineInterface) => {
+  const dir = await slot($)
+  if (!dir || (await read($, setup)) === 'missing') return
+  const js = await build($)
+  if (String(await $.fs.read(`${dir}\\theme.js`).catch(() => '')) === js) return
+  await $.fs.write(`${dir}\\theme.js`, js)
+  $.ui.toast('Wallpapers updated. Restart Claude Desktop to see the changes.')
+}
+
 const install = async ($: EngineInterface) => {
   const dir = await slot($)
   if (!dir) {
@@ -102,10 +142,7 @@ const install = async ($: EngineInterface) => {
     if (ours) ours.resources = [...new Set([...(ours.resources ?? []), 'theme.json', 'event.json'])]
     else war.push(fresh.web_accessible_resources[0])
   }
-  const read = async (f: string) => String(await $.fs.read(`${ext}/src/${f}`))
-  const scenes = (await $.fs.list(`${ext}/src/scenes`)).filter(f => f.kind === 'file' && f.name.endsWith('.js')).map(f => f.name).sort()
-  await $.fs.write(`${dir}\\theme.js`, assemble(await read('core.js'),
-    await Promise.all(scenes.map(f => read(`scenes/${f}`))), await read('engine.js')))
+  await $.fs.write(`${dir}\\theme.js`, await build($))
   if (!(await $.fs.exists(`${dir}\\theme.json`))) await $.fs.write(`${dir}\\theme.json`, '{}')
   if (!(await $.fs.exists(`${dir}\\event.json`))) await $.fs.write(`${dir}\\event.json`, '{}')
   await $.fs.write(`${dir}\\manifest.json`, JSON.stringify(manifest, null, 2))
@@ -199,6 +236,7 @@ export const register: Register = on => {
   on('command.run', { command: 'themes' }, async $ => {
     await check($).catch(() => {})
     await loadMine($).catch(() => {})
+    await rebuild($).catch(() => {})
     const open = await update($, isStripOpen, o => !o)
     return { text: open ? 'Theme strip opened above the prompt.' : 'Theme strip closed.' }
   })
@@ -224,6 +262,7 @@ export const register: Register = on => {
               {Svg ? <Svg source={tile(t, t.id === now)} alt={`Preview of ${t.name}`} width={120} /> : null}
               <Button key={`use-${t.id}`} label={t.id === now ? `✓ ${t.name}` : t.name} dimColor={t.id !== now}
                 onPress={() => pick($, t)} />
+              {waiting.has(t.id) ? <Text key={`wait-${t.id}`} dimColor>Restart Claude to show</Text> : null}
             </Box>
           ))}
         </Box>
