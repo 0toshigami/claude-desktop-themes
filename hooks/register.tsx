@@ -2,7 +2,7 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { Theme } from '../types'
-import { assemble } from '../tools/assemble.mjs'
+import { assemble, sceneModule } from '../tools/assemble.mjs'
 import { THEMES, parseUserTheme, tile } from './themes'
 
 // Windows only (under %APPDATA%); 
@@ -31,9 +31,10 @@ const slot = async ($: EngineInterface) => {
   return appData && `${appData}\\${SLOT}`
 }
 
-export const fileOf = (t: Theme, css = '', look: Look = LOOK) =>
+// scene: the module path of the person's own scene, which the page imports
+export const fileOf = (t: Theme, css = '', look: Look = LOOK, scene?: string) =>
   JSON.stringify(t.bg
-    ? { id: t.id, bg: t.bg, text: t.text, accent: t.accent, font: t.font, vars: t.vars, wallpaper: t.wallpaper, ...look, css }
+    ? { id: t.id, bg: t.bg, text: t.text, accent: t.accent, font: t.font, vars: t.vars, wallpaper: t.wallpaper, scene, ...look, css }
     : {})
 
 const statusOf = (t: Theme | undefined, kind: 'idle' | 'tool' | 'error' | 'done', tool = '') =>
@@ -45,14 +46,8 @@ const mineDir = async ($: EngineInterface) => {
   const home = await $.env.get('USERPROFILE')
   return home && `${home}\\${MINE}`
 }
-// when Claude Desktop started (its oldest process; Claude Code's own sit under \claude-code\): a scene written after
-// that is not on its page until a restart. Infinity when unknown, so nothing reads as waiting
-let desktopStart: Promise<number> | undefined
-const startedAt = ($: EngineInterface) => desktopStart ??= $.process.run(['powershell', '-NoProfile', '-Command',
-  "(Get-Process claude | ? Path -notmatch '\\\\claude-code\\\\' | sort StartTime | select -First 1).StartTime.ToUniversalTime().Subtract([datetime]'1970-01-01').TotalMilliseconds"])
-  .then(r => Number(r.stdout.trim()) || Infinity, () => Infinity)
-// the person's wallpapers whose scene shows only after a restart
-let waiting = new Set<string>()
+// when each of the person's scenes last changed: the page loads it again on a new time
+let sceneAt: Record<string, number> = {}
 
 const loadMine = async ($: EngineInterface) => {
   const dir = await mineDir($)
@@ -69,9 +64,7 @@ const loadMine = async ($: EngineInterface) => {
     if (t && !THEMES.some(b => b.id === t.id)) found.push(t)
   }
   mine = found
-  const scenes = found.filter(t => t.wallpaper)
-  const start = scenes.length ? await startedAt($) : Infinity
-  waiting = new Set(scenes.filter(t => at(`${t.id}.js`)! > start).map(t => t.id))
+  sceneAt = Object.fromEntries(found.filter(t => t.wallpaper).map(t => [t.id, Math.round(at(`${t.id}.js`)!)]))
 }
 const allThemes = () => [...THEMES, ...mine]
 
@@ -100,36 +93,17 @@ const check = async ($: EngineInterface) => {
     : loaded && was !== 'restart' ? 'ready' : 'restart')
 }
 
-// theme.js: the mod's scenes, then the person's own (<id>.js beside their <id>.json)
+// theme.js: the mod's scenes (the person's own load on their own, see pick)
 const build = async ($: EngineInterface) => {
   const ext = `${$.plugin.root}/extension`
-  const read = async (f: string) => String(await $.fs.read(f))
+  const read = async (f: string) => String(await $.fs.read(`${ext}/src/${f}`))
   const scenes = (await $.fs.list(`${ext}/src/scenes`)).filter(f => f.kind === 'file' && f.name.endsWith('.js')).map(f => f.name).sort()
-  const dir = await mineDir($)
-  // (sorted as tools/build.mjs does, so a theme.js it built reads as current here)
-  const own = dir ? mine.filter(t => t.wallpaper).map(t => `${dir}\\${t.id}.js`).sort() : []
-  return assemble(await read(`${ext}/src/core.js`),
-    await Promise.all([...scenes.map(f => read(`${ext}/src/scenes/${f}`)), ...own.map(read)]), await read(`${ext}/src/engine.js`))
+  return assemble(await read('core.js'), await Promise.all(scenes.map(f => read(`scenes/${f}`))), await read('engine.js'))
 }
 
-// a new or changed scene (the person's, or the mod's after an update) goes into theme.js; the page loads it at start
-const rebuild = async ($: EngineInterface) => {
-  const dir = await slot($)
-  if (!dir || (await read($, setup)) === 'missing') return
-  const js = await build($)
-  if (String(await $.fs.read(`${dir}\\theme.js`).catch(() => '')) === js) return
-  await $.fs.write(`${dir}\\theme.js`, js)
-  $.ui.toast('Wallpapers updated. Restart Claude Desktop to see the changes.')
-}
-
-const install = async ($: EngineInterface) => {
-  const dir = await slot($)
-  if (!dir) {
-    $.ui.toast('Only Windows is supported for now.')
-    return
-  }
-  const ext = `${$.plugin.root}/extension`
-  const fresh = JSON.parse(String(await $.fs.read(`${ext}/manifest.json`)))
+// the slot's manifest with our entries in (the slot is React DevTools' and other mods may share it)
+const withOurs = async ($: EngineInterface, dir: string) => {
+  const fresh = JSON.parse(String(await $.fs.read(`${$.plugin.root}/extension/manifest.json`)))
   let manifest = fresh
   try {
     manifest = JSON.parse(String(await $.fs.read(`${dir}\\manifest.json`)))
@@ -139,13 +113,34 @@ const install = async ($: EngineInterface) => {
     if (!scripts.some(s => s.js?.includes('theme.js'))) scripts.push(fresh.content_scripts[0])
     const war: { resources?: string[] }[] = (manifest.web_accessible_resources ??= [])
     const ours = war.find(w => w.resources?.includes('theme.json'))
-    if (ours) ours.resources = [...new Set([...(ours.resources ?? []), 'theme.json', 'event.json'])]
+    if (ours) ours.resources = [...new Set([...(ours.resources ?? []), ...OURS])]
     else war.push(fresh.web_accessible_resources[0])
+  }
+  return JSON.stringify(manifest, null, 2)
+}
+
+// after a mod update: its scenes into theme.js, its entries into the manifest; the page loads both at start
+const rebuild = async ($: EngineInterface) => {
+  const dir = await slot($)
+  if (!dir || (await read($, setup)) === 'missing') return
+  const now = async (f: string) => String(await $.fs.read(`${dir}\\${f}`).catch(() => ''))
+  const js = await build($), manifest = await withOurs($, dir)
+  if ((await now('theme.js')) === js && JSON.stringify(JSON.parse(await now('manifest.json'))) === JSON.stringify(JSON.parse(manifest))) return
+  await $.fs.write(`${dir}\\theme.js`, js)
+  await $.fs.write(`${dir}\\manifest.json`, manifest)
+  $.ui.toast('The extension is updated. Restart Claude Desktop to see the changes.')
+}
+
+const install = async ($: EngineInterface) => {
+  const dir = await slot($)
+  if (!dir) {
+    $.ui.toast('Only Windows is supported for now.')
+    return
   }
   await $.fs.write(`${dir}\\theme.js`, await build($))
   if (!(await $.fs.exists(`${dir}\\theme.json`))) await $.fs.write(`${dir}\\theme.json`, '{}')
   if (!(await $.fs.exists(`${dir}\\event.json`))) await $.fs.write(`${dir}\\event.json`, '{}')
-  await $.fs.write(`${dir}\\manifest.json`, JSON.stringify(manifest, null, 2))
+  await $.fs.write(`${dir}\\manifest.json`, await withOurs($, dir))
   const { exitCode } = await $.process.run(['setx', 'REACT_PROFILE', '1'])
   await update($, setup, () => 'restart')
   $.ui.toast(exitCode === 0
@@ -154,7 +149,8 @@ const install = async ($: EngineInterface) => {
 }
 
 type Manifest = { content_scripts?: { js?: string[] }[]; web_accessible_resources?: { resources?: string[] }[] }
-const OURS = ['theme.js', 'theme.json', 'event.json']
+// our web-accessible files, the scenes among them a pattern; with theme.js, the files we delete on remove
+const OURS = ['theme.json', 'event.json', 'scenes/*.js']
 // The slot is React DevTools' and other mods may share it, so take out only our entries;
 // undefined when nothing but ours was there
 export const withoutOurs = (m: Manifest): Manifest | undefined => {
@@ -178,7 +174,7 @@ const remove = async ($: EngineInterface) => {
   let exitCode: number | null
   if (!manifest || rest) {
     if (rest) await $.fs.write(`${dir}\\manifest.json`, JSON.stringify(rest, null, 2))
-    ;({ exitCode } = await $.process.run(['cmd', '/c', 'del', '/q', ...OURS.map(f => `${dir}\\${f}`)]))
+    ;({ exitCode } = await $.process.run(['cmd', '/c', 'del', '/q', ...['theme.js', ...OURS].map(f => `${dir}\\${f.replace('/', '\\')}`)]))
   } else {
     // (SetEnvironmentVariable, not reg delete: it tells Windows, so apps started later see the change)
     await $.process.run(['powershell', '-NoProfile', '-Command',
@@ -198,8 +194,12 @@ const pick = async ($: EngineInterface, t: Theme) => {
   if (!dir) return
   const css = async (name: string) => String(await $.fs.read(`${$.plugin.root}/themes/${name}.css`).catch(() => ''))
   const wall = t.wallpaper ? await css('_wallpaper') : ''
+  // the person's own scene: copied in as a module beside theme.js, a new ?v= each time the file changes
+  const own = t.wallpaper && Object.hasOwn(sceneAt, t.id) ? await mineDir($) : undefined
+  if (own) await $.fs.write(`${dir}\\scenes\\${t.id}.js`, sceneModule(String(await $.fs.read(`${own}\\${t.id}.js`))))
   await $.fs.write(`${dir}\\theme.json`, fileOf(t, `${await css('_base')}\n${wall}\n${t.css ?? (await css(t.id))}`,
-    { motion: await read($, motion), speed: await read($, speed), cell: await read($, cell), veil: await read($, veil) }))
+    { motion: await read($, motion), speed: await read($, speed), cell: await read($, cell), veil: await read($, veil) },
+    own ? `scenes/${t.id}.js?v=${sceneAt[t.id]}` : undefined))
   await update($, current, () => t.id)
   $.ui.status(statusOf(t, 'idle'))
   $.ui.toast(`Theme: ${t.name}`)
@@ -261,9 +261,7 @@ export const register: Register = on => {
             <Box key={`tile-${t.id}`} flexDirection="column" alignItems="center" gap="xs">
               {Svg ? <Svg source={tile(t, t.id === now)} alt={`Preview of ${t.name}`} width={120} /> : null}
               <Button key={`use-${t.id}`} label={t.id === now ? `✓ ${t.name}` : t.name} dimColor={t.id !== now}
-                onPress={() => pick($, t)} />
-              {waiting.has(t.id) ? <Text key={`wait-${t.id}`} dimColor>Restart Claude to show</Text> : null}
-            </Box>
+                onPress={() => pick($, t)} />            </Box>
           ))}
         </Box>
       </Box>

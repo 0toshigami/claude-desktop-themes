@@ -95,9 +95,9 @@ const stopWall = () => {
   wall = undefined;
 };
 const startWall = name => {
-  if (wall?.name === name) return;
-  stopWall();
   const scene = Object.hasOwn(SCENES, name) ? SCENES[name] : undefined;
+  if (wall?.name === name && wall.scene === scene) return; // (an edited scene of the person's comes as a new object)
+  stopWall();
   if (!scene) return;
   const canvas = document.createElement('canvas'), ctx = canvas.getContext('2d');
   if (!ctx || !document.body) return;
@@ -177,6 +177,18 @@ const apply = t => {
   painted = true;
 };
 
+// A person's own scene: scenes/<id>.js?v=<time>, a module the mod copied in (a new v for each change of the file)
+const loaded = new Set();
+const loadScene = async path => {
+  if (typeof path !== 'string' || !/^scenes\/[a-z][a-z0-9-]{1,40}\.js\?v=\d+$/.test(path) || loaded.has(path)) return;
+  loaded.add(path);
+  try {
+    await import(chrome.runtime.getURL(path));
+  } catch (err) {
+    console.warn('themes-for-claude: cannot load the scene', path, err);
+  }
+};
+
 let theme, warned = false;
 const tickTheme = async () => {
   let text;
@@ -191,6 +203,7 @@ const tickTheme = async () => {
   theme = text;
   try {
     const t = JSON.parse(text);
+    await loadScene(t.scene);
     apply(t);
     console.log('themes-for-claude:', t.id ?? 'Claude\'s own');
   } catch (err) {

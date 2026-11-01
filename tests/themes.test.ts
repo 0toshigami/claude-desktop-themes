@@ -2,6 +2,7 @@ import { expect, test } from 'claude-code/testing'
 
 import { fileOf, withoutOurs } from '../hooks/register'
 import { THEMES, parseUserTheme, tile } from '../hooks/themes'
+import { sceneModule } from '../tools/assemble.mjs'
 
 test('a person\'s own theme is read as a simple theme, and a bad one is refused', async () => {
   const good = parseUserTheme(JSON.stringify({ id: 'my-dusk', name: 'My Dusk', tagline: 't', bg: '#112233', text: '#eeeeee',
@@ -30,6 +31,8 @@ test('every theme has a tile the desktop takes, and Claude writes no colors', as
   expect(look.speed).toBe(2)
   expect(look.cell).toBe(14)
   expect(look.veil).toBe(.6)
+  expect(JSON.parse(fileOf(THEMES[1]!, '', undefined, 'scenes/snowy.js?v=1')).scene).toBe('scenes/snowy.js?v=1')
+  expect(sceneModule("SCENES['snowy'] = {}")).toMatch(/^const \{ [^}]*\bsketch\b[^}]*\} = globalThis\.themesForClaude;\nSCENES/)
 })
 
 test('removing takes out only our entries from a shared slot, and the whole slot when it was ours', async () => {

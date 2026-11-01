@@ -79,8 +79,7 @@ claude plugin install themes-for-claude --marketplace 0toshigami/claude-desktop-
 - **Simple themes** go into `%USERPROFILE%\.claude\themes-for-claude\` as `<id>.json`, with an optional `<id>.css`.
   They show in the strip's "Your themes" row, and an update of the mod does not remove them.
 - **Live wallpapers** go into the same folder: `<id>.json` with `"wallpaper": "<id>"`, and the scene as `<id>.js`.
-  The `make-theme` skill builds the scene into the extension when you approve it (or the next `/themes` does, for a
-  scene you added by hand); restart Claude Desktop to see it.
+  Pick it in `/themes` and it shows at once, with no restart.
 
 ## Uninstall
 
