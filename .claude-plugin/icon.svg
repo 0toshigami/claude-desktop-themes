@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
-  <!-- desktop-themes: a night sky drawn in tiles, as the live wallpapers draw theirs: a crescent moon, a cloud, stars -->
+  <!-- desktop-themes: a little Clawd, drawn in tiles as the wallpapers draw theirs, painting a crescent moon onto the
+       night sky, a palette in his other hand -->
   <defs>
     <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#1a2a5e"/>
@@ -9,49 +10,52 @@
   <rect width="128" height="128" rx="28" fill="url(#sky)"/>
   <!-- stars -->
   <g fill="#dbe2f5">
-    <rect x="22" y="24" width="4" height="4" rx="1"/>
-    <rect x="44" y="40" width="3" height="3" rx="1" opacity=".7"/>
-    <rect x="100" y="22" width="3" height="3" rx="1" opacity=".7"/>
-    <rect x="30" y="58" width="3" height="3" rx="1" opacity=".5"/>
+    <rect x="20" y="22" width="4" height="4" rx="1"/>
+    <rect x="46" y="14" width="3" height="3" rx="1" opacity=".7"/>
+    <rect x="36" y="44" width="3" height="3" rx="1" opacity=".5"/>
+    <rect x="112" y="58" width="3" height="3" rx="1" opacity=".6"/>
   </g>
-  <!-- the crescent moon, in tiles -->
+  <!-- the crescent moon, in tiles, still wet at its bottom tip -->
   <g fill="#e8d89a">
-    <rect x="84" y="14" width="9" height="9" rx="2"/>
-    <rect x="75" y="14" width="9" height="9" rx="2"/>
-    <rect x="66" y="23" width="9" height="9" rx="2"/>
-    <rect x="57" y="32" width="9" height="9" rx="2"/>
-    <rect x="57" y="41" width="9" height="9" rx="2"/>
-    <rect x="57" y="50" width="9" height="9" rx="2"/>
-    <rect x="66" y="59" width="9" height="9" rx="2"/>
-    <rect x="75" y="68" width="9" height="9" rx="2"/>
-    <rect x="84" y="68" width="9" height="9" rx="2"/>
+    <rect x="94" y="14" width="7" height="7" rx="1.5"/><rect x="101" y="14" width="7" height="7" rx="1.5"/>
+    <rect x="87" y="21" width="7" height="7" rx="1.5"/>
+    <rect x="80" y="28" width="7" height="7" rx="1.5"/>
+    <rect x="80" y="35" width="7" height="7" rx="1.5"/>
+    <rect x="87" y="42" width="7" height="7" rx="1.5"/>
   </g>
+  <rect x="94" y="42" width="7" height="7" rx="1.5" fill="#fff3c4"/>
   <g fill="#c9b673">
-    <rect x="75" y="23" width="9" height="9" rx="2"/>
-    <rect x="66" y="32" width="9" height="9" rx="2"/>
-    <rect x="66" y="41" width="9" height="9" rx="2"/>
-    <rect x="66" y="50" width="9" height="9" rx="2"/>
-    <rect x="75" y="59" width="9" height="9" rx="2"/>
+    <rect x="94" y="21" width="7" height="7" rx="1.5"/>
+    <rect x="87" y="28" width="7" height="7" rx="1.5"/>
+    <rect x="87" y="35" width="7" height="7" rx="1.5"/>
   </g>
-  <!-- a cloud drifting below, in tiles -->
-  <g fill="#7088d8">
-    <rect x="30" y="86" width="9" height="9" rx="2" opacity=".75"/>
-    <rect x="39" y="86" width="9" height="9" rx="2" opacity=".85"/>
-    <rect x="48" y="77" width="9" height="9" rx="2"/>
-    <rect x="57" y="77" width="9" height="9" rx="2"/>
-    <rect x="48" y="86" width="9" height="9" rx="2"/>
-    <rect x="57" y="86" width="9" height="9" rx="2"/>
-    <rect x="66" y="86" width="9" height="9" rx="2"/>
-    <rect x="75" y="86" width="9" height="9" rx="2"/>
-    <rect x="84" y="86" width="9" height="9" rx="2" opacity=".85"/>
-    <rect x="21" y="95" width="9" height="9" rx="2" opacity=".6"/>
-    <rect x="30" y="95" width="9" height="9" rx="2" opacity=".75"/>
-    <rect x="39" y="95" width="9" height="9" rx="2" opacity=".85"/>
-    <rect x="48" y="95" width="9" height="9" rx="2"/>
-    <rect x="57" y="95" width="9" height="9" rx="2"/>
-    <rect x="66" y="95" width="9" height="9" rx="2"/>
-    <rect x="75" y="95" width="9" height="9" rx="2"/>
-    <rect x="84" y="95" width="9" height="9" rx="2" opacity=".85"/>
-    <rect x="93" y="95" width="9" height="9" rx="2" opacity=".7"/>
+  <!-- the brush, from his right hand up to the moon: handle, ferrule, bristles dipped in moonlight -->
+  <g transform="rotate(-62 80 84)">
+    <rect x="80" y="81" width="34" height="5" rx="2.5" fill="#a0673a"/>
+    <rect x="112" y="80.5" width="6" height="6" rx="1" fill="#b9c0cc"/>
+    <path d="M118 80.5 h5 q5 3 0 6 h-5 z" fill="#e8d89a"/>
+  </g>
+  <!-- the palette in his left hand, with dabs of the themes' colors -->
+  <ellipse cx="13" cy="96" rx="11" ry="8" fill="#e9dcc4"/>
+  <circle cx="9" cy="93" r="2.2" fill="#ff8a6b"/>
+  <circle cx="15" cy="92" r="2.2" fill="#5aaeff"/>
+  <circle cx="18" cy="98" r="2.2" fill="#39e87a"/>
+  <circle cx="10" cy="99" r="2.2" fill="#e0567f"/>
+  <!-- Clawd: a body of tiles, two eyes, arms out to the sides, four legs -->
+  <g fill="#d97757">
+    <rect x="27" y="74" width="49" height="7" rx="1.5"/>
+    <rect x="27" y="81" width="7" height="7" rx="1.5"/>
+    <rect x="41" y="81" width="21" height="7" rx="1.5"/>
+    <rect x="69" y="81" width="7" height="7" rx="1.5"/>
+    <rect x="20" y="88" width="63" height="7" rx="1.5"/>
+    <rect x="27" y="95" width="49" height="7" rx="1.5"/>
+    <rect x="27" y="102" width="7" height="8" rx="1.5"/>
+    <rect x="41" y="102" width="7" height="8" rx="1.5"/>
+    <rect x="55" y="102" width="7" height="8" rx="1.5"/>
+    <rect x="69" y="102" width="7" height="8" rx="1.5"/>
+  </g>
+  <g fill="#3b1d12">
+    <rect x="34" y="81" width="7" height="7" rx="1.5"/>
+    <rect x="62" y="81" width="7" height="7" rx="1.5"/>
   </g>
 </svg>
