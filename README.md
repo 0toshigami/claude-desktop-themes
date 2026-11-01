@@ -12,6 +12,9 @@ Themes for Claude Desktop, applied live. Pick one from a strip above the prompt 
 
 Windows only for now. The mod works in the Claude Desktop app's Code tab.
 
+This is a community mod. It is not made or endorsed by Anthropic. Claude, Claude Desktop, Claude Code and Clawd
+belong to Anthropic.
+
 ## Install
 
 At the prompt of a Claude Code terminal session:
