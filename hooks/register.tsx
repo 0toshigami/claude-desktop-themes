@@ -2,6 +2,7 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { Theme } from '../types'
+import { assemble } from '../tools/assemble.mjs'
 import { THEMES, parseUserTheme, tile } from './themes'
 
 // Windows only (under %APPDATA%); 
@@ -95,7 +96,10 @@ const install = async ($: EngineInterface) => {
     if (ours) ours.resources = [...new Set([...(ours.resources ?? []), 'theme.json', 'event.json'])]
     else war.push(fresh.web_accessible_resources[0])
   }
-  await $.fs.write(`${dir}\\theme.js`, String(await $.fs.read(`${ext}/theme.js`)))
+  const read = async (f: string) => String(await $.fs.read(`${ext}/src/${f}`))
+  const scenes = (await $.fs.list(`${ext}/src/scenes`)).filter(f => f.kind === 'file' && f.name.endsWith('.js')).map(f => f.name).sort()
+  await $.fs.write(`${dir}\\theme.js`, assemble(await read('core.js'),
+    await Promise.all(scenes.map(f => read(`scenes/${f}`))), await read('engine.js')))
   if (!(await $.fs.exists(`${dir}\\theme.json`))) await $.fs.write(`${dir}\\theme.json`, '{}')
   if (!(await $.fs.exists(`${dir}\\event.json`))) await $.fs.write(`${dir}\\event.json`, '{}')
   await $.fs.write(`${dir}\\manifest.json`, JSON.stringify(manifest, null, 2))

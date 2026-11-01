@@ -2,10 +2,11 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { THEMES } from '../../hooks/themes'
+import { build } from '../build.mjs'
 
 const mod = fileURLToPath(new URL('../../', import.meta.url))
 const out = fileURLToPath(new URL('.', import.meta.url))
-const js = readFileSync(`${mod}/extension/theme.js`, 'utf8')
+const js = build()
 const css = readFileSync(`${mod}/themes/_base.css`, 'utf8') + '\n' + readFileSync(`${mod}/themes/_wallpaper.css`, 'utf8')
 const AT: Record<string, number> = { moonlit: 12.6, 'cloud-drift': 30, clawd: 20, 'honu-lagoon': 40, 'koi-pond': 40, jellyfish: 30, 'lantern-night': 40, fireflies: 20, 'neon-rain': 20 }
 if (!js.includes('time: 0, last: 0')) throw new Error('theme.js changed: no clock start')

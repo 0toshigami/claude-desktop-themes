@@ -38,14 +38,14 @@ Do not build before the person sees a draft and approves it.
 
 1. Write the theme as JSON in your scratchpad, for example `draft/theme.json`. The fields are in
    [The theme file](#the-theme-file). For a simple theme with a stylesheet, also write `draft/theme.css`.
-2. For a live wallpaper, copy `extension/theme.js` from the mod into your scratchpad and add the scene to the copy.
-   Read [Live wallpaper scenes](#live-wallpaper-scenes) first.
+2. For a live wallpaper, write the scene as `draft/<id>.js` in your scratchpad, in the same form as a file in the
+   mod's `extension/src/scenes/`. Read [Live wallpaper scenes](#live-wallpaper-scenes) first.
 3. Build the draft page with this skill's script:
    ```bash
-   node "<this skill's folder>/draft.mjs" --theme draft/theme.json [--css draft/theme.css] [--theme-js draft/theme.js] [--start 20] --out draft/<id>-draft.html
+   node "<this skill's folder>/draft.mjs" --theme draft/theme.json [--css draft/theme.css] [--scene draft/<id>.js] [--start 20] --out draft/<id>-draft.html
    ```
-   The page is a small Claude Desktop mock painted by the mod's real `theme.js`, so it shows the theme as it will
-   look. `--start` sets how many seconds into the scene the page starts.
+   The page is a small Claude Desktop mock painted by the mod's real extension, with the draft scene built in, so it
+   shows the theme as it will look. `--start` sets how many seconds into the scene the page starts.
 4. Publish the page as an Artifact. Load the artifact skills first, as the Artifact tool asks. In your reply, name
    the colors you chose and why, and the motifs you took from the references.
 5. Change the draft until the person says yes. Publish each new version to the same Artifact.
@@ -67,16 +67,15 @@ that a built-in theme uses. Check these before you write the file.
 
 ### A live wallpaper
 
-1. Add the scene to `extension/theme.js` in the mod: its pictures and helpers before `const SCENES = {`, and its
-   entry in `SCENES`. An entry has `cell(x, y, cols, rows, t)`, which returns a tile `{ bg, fg, a }`, a loose
+1. Copy the approved scene to `extension/src/scenes/<id>.js` in the mod. A scene file holds its own pictures and
+   helpers, and ends with `SCENES['<id>'] = { ... }`. It can use the helpers in `extension/src/core.js`. The entry has `cell(x, y, cols, rows, t)`, which returns a tile `{ bg, fg, a }`, a loose
    character `{ fg, a, ch? }`, or nothing. It also has `sprites(cols, rows, t)`, which returns
    `[{ x, y, key, art, pal }]` or `[{ x, y, key, field, w, h }]`. A sprite can also have `a`, `shadow` and
    `glow: { r, color, a }`. Only an `art` sprite can have `halo`. A cell can have `floor`: the least brightness it
    keeps in the chat column. A scene can have `size`: the largest cell size in pixels.
 2. Add the theme to `THEMES` in `hooks/themes.ts` with `live(...)`, as the other wallpapers do. Its strip tile
    is a capture (step 4).
-3. Copy the new `extension/theme.js` over the installed one:
-   `%APPDATA%\Claude\extensions\fmkadmapgofadopljbjfkapdkoienihi\theme.js`. Compare the two files' hashes after.
+3. Run `node "<the mod's root>/tools/build.mjs"`. It builds `theme.js` from `extension/src` into the installed extension.
 4. Make the strip's tile from a capture of the real scene: run the scripts in `tools/thumbs/`: `npx tsx pages.ts`,
    then `capture.ps1 <id>`, then `node embed.mjs`. They write `hooks/thumbs.ts`.
 5. Run `claude plugin validate` and `claude plugin test` on the mod folder.
@@ -125,7 +124,7 @@ Look at `themes/*.css` in the mod for the parts a theme can style:
 
 ## Live wallpaper scenes
 
-Read the scenes in `extension/theme.js` (`SCENES`) and the helpers above them before you write one. The person liked
+Read the scenes in `extension/src/scenes/` and the helpers in `extension/src/core.js` before you write one. The person liked
 these rules for the built-in scenes:
 
 - **A clear idea and a few big motifs**, not a full picture. Two or three kinds of things, each easy to recognize.

@@ -1,11 +1,12 @@
 import { readFileSync, writeFileSync } from 'node:fs'
+import { build } from '../../tools/build.mjs'
 
 const mod = new URL('../../', import.meta.url)
 const arg = name => { const i = process.argv.indexOf(`--${name}`); return i > 0 ? process.argv[i + 1] : undefined }
 const need = name => arg(name) ?? (console.error(`missing --${name}`), process.exit(1))
 const theme = JSON.parse(readFileSync(need('theme'), 'utf8'))
 const own = arg('css') ? readFileSync(arg('css'), 'utf8') : ''
-const js = readFileSync(arg('theme-js') ?? new URL('extension/theme.js', mod), 'utf8')
+const js = build(arg('scene') ? [arg('scene')] : [])
 const sheet = name => readFileSync(new URL(`themes/${name}.css`, mod), 'utf8')
 const css = [sheet('_base'), theme.wallpaper ? sheet('_wallpaper') : '', own].join('\n')
 const T = { ...theme, motion: 'smooth', cell: 18, veil: .4, css }
