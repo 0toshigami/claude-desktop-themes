@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- desktop-themes: a night sky drawn in tiles, as the live wallpapers draw theirs: a crescent moon, a cloud, stars -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a2a5e"/>
+      <stop offset="1" stop-color="#090f24"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="url(#sky)"/>
+  <!-- stars -->
+  <g fill="#dbe2f5">
+    <rect x="22" y="24" width="4" height="4" rx="1"/>
+    <rect x="44" y="40" width="3" height="3" rx="1" opacity=".7"/>
+    <rect x="100" y="22" width="3" height="3" rx="1" opacity=".7"/>
+    <rect x="30" y="58" width="3" height="3" rx="1" opacity=".5"/>
+  </g>
+  <!-- the crescent moon, in tiles -->
+  <g fill="#e8d89a">
+    <rect x="84" y="14" width="9" height="9" rx="2"/>
+    <rect x="75" y="14" width="9" height="9" rx="2"/>
+    <rect x="66" y="23" width="9" height="9" rx="2"/>
+    <rect x="57" y="32" width="9" height="9" rx="2"/>
+    <rect x="57" y="41" width="9" height="9" rx="2"/>
+    <rect x="57" y="50" width="9" height="9" rx="2"/>
+    <rect x="66" y="59" width="9" height="9" rx="2"/>
+    <rect x="75" y="68" width="9" height="9" rx="2"/>
+    <rect x="84" y="68" width="9" height="9" rx="2"/>
+  </g>
+  <g fill="#c9b673">
+    <rect x="75" y="23" width="9" height="9" rx="2"/>
+    <rect x="66" y="32" width="9" height="9" rx="2"/>
+    <rect x="66" y="41" width="9" height="9" rx="2"/>
+    <rect x="66" y="50" width="9" height="9" rx="2"/>
+    <rect x="75" y="59" width="9" height="9" rx="2"/>
+  </g>
+  <!-- a cloud drifting below, in tiles -->
+  <g fill="#7088d8">
+    <rect x="30" y="86" width="9" height="9" rx="2" opacity=".75"/>
+    <rect x="39" y="86" width="9" height="9" rx="2" opacity=".85"/>
+    <rect x="48" y="77" width="9" height="9" rx="2"/>
+    <rect x="57" y="77" width="9" height="9" rx="2"/>
+    <rect x="48" y="86" width="9" height="9" rx="2"/>
+    <rect x="57" y="86" width="9" height="9" rx="2"/>
+    <rect x="66" y="86" width="9" height="9" rx="2"/>
+    <rect x="75" y="86" width="9" height="9" rx="2"/>
+    <rect x="84" y="86" width="9" height="9" rx="2" opacity=".85"/>
+    <rect x="21" y="95" width="9" height="9" rx="2" opacity=".6"/>
+    <rect x="30" y="95" width="9" height="9" rx="2" opacity=".75"/>
+    <rect x="39" y="95" width="9" height="9" rx="2" opacity=".85"/>
+    <rect x="48" y="95" width="9" height="9" rx="2"/>
+    <rect x="57" y="95" width="9" height="9" rx="2"/>
+    <rect x="66" y="95" width="9" height="9" rx="2"/>
+    <rect x="75" y="95" width="9" height="9" rx="2"/>
+    <rect x="84" y="95" width="9" height="9" rx="2" opacity=".85"/>
+    <rect x="93" y="95" width="9" height="9" rx="2" opacity=".7"/>
+  </g>
+</svg>
