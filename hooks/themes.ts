@@ -113,8 +113,7 @@ export const THEMES: Theme[] = [
     'rgba(12, 28, 58, .6)', 'rgba(165, 140, 240, .3)', 'drifting into deep work',
     { idle: '◠', tool: '◠ {tool}…', error: '◠ {tool} failed', done: '◠ done' },
     tiles(grid((x, y) => (y <= 5 && ell(x, y, 22, 5, 3.2, 2.2) <= 1) || (y > 5 && y < 11 && (x === 20 || x === 22 || x === 24))), '#9a7fe0', '#1a1033', '%')),
-  // (id paper-boats kept from the scene it replaced, so a saved choice still finds it)
-  live('paper-boats', 'Lantern Night', 'Paper lanterns drifting down a river at night',
+  live('lantern-night', 'Lantern Night', 'Paper lanterns drifting down a river at night',
     ['#0b1424', '#efe6d2', '#f2a541'], 'linear-gradient(#070c1c, #24305e 29%, #0e1a30 30%, #08111f 60%, #050a14)',
     'rgba(11, 20, 36, .6)', 'rgba(242, 165, 65, .3)', 'let your ideas drift',
     { idle: '🏮', tool: '🏮 {tool}…', error: '🏮 {tool} went out', done: '🏮 done' },

@@ -730,7 +730,7 @@
     // lantern night (toro nagashi): paper lanterns on little boats drifting down a dark river, near ones big and bright,
     // far ones small; their light flickers and trembles on the water. Over the river a far bank of dark roofs with a
     // few lit windows, their light on the water too; stars over it; slow ripples
-    'paper-boats': {
+    'lantern-night': {
       cell: (x, y, cols, rows, t) => {
         const bank = Math.round(rows * BANK), roof = bank - 1 - Math.floor(2.6 * (.5 + .5 * Math.sin(x * .21)) + hash(Math.floor(x / 3), 7) * 2.2);
         if (y < roof) return twinkle(x, y, t, '#fff1cf', .012);

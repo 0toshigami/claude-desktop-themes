@@ -9,7 +9,7 @@ const out = fileURLToPath(new URL('.', import.meta.url))
 const js = readFileSync(`${mod}/extension/theme.js`, 'utf8')
 const css = readFileSync(`${mod}/themes/_base.css`, 'utf8') + '\n' + readFileSync(`${mod}/themes/_wallpaper.css`, 'utf8')
 // (when each scene looks its best: the moon's meteor mid-flight, creatures and lanterns well in)
-const AT: Record<string, number> = { moonlit: 12.6, 'cloud-drift': 30, clawd: 20, 'honu-lagoon': 40, 'koi-pond': 40, jellyfish: 30, 'paper-boats': 40, fireflies: 20, 'neon-rain': 20 }
+const AT: Record<string, number> = { moonlit: 12.6, 'cloud-drift': 30, clawd: 20, 'honu-lagoon': 40, 'koi-pond': 40, jellyfish: 30, 'lantern-night': 40, fireflies: 20, 'neon-rain': 20 }
 for (const t of THEMES.filter(t => t.wallpaper)) {
   const T = JSON.stringify({ id: t.id, bg: t.bg, text: t.text, accent: t.accent, vars: t.vars, wallpaper: t.wallpaper, motion: 'smooth', cell: 22, css })
   if (!js.includes('time: 0, last: 0')) throw new Error('theme.js changed: no clock start')
