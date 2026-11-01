@@ -1,0 +1,94 @@
+/* Terminal: a green phosphor tube. Scanlines and a dark rim over the whole window, glowing writing, square corners
+   (its vars), a "> " before your own messages. Running a tool flickers the tube, a failed one reddens the rim, a
+   finished turn glows it green. While Claude works a bright band sweeps down the tube; while a tool waits for your
+   yes the rim pulses amber. */
+
+html::after {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 2147483646;
+  background: repeating-linear-gradient(to bottom, transparent 0 2px, rgba(0, 0, 0, .22) 2px 3px);
+}
+html::before {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 2147483646;
+  background: radial-gradient(ellipse at center, transparent 62%, rgba(0, 0, 0, .55) 100%);
+  transition: background .25s;
+}
+html[data-theme-event=error]::before {
+  background: radial-gradient(ellipse at center, transparent 50%, rgba(255, 50, 50, .4) 100%);
+}
+html[data-theme-event=done]::before {
+  background: radial-gradient(ellipse at center, transparent 50%, rgba(57, 232, 122, .3) 100%);
+}
+
+[data-cds=AssistantMessage], [data-cds=UserMessage] { text-shadow: 0 0 6px rgba(57, 232, 122, .35); }
+[data-cds=UserMessage] [data-cds=Prose] > :first-child::before { content: "> "; color: #39e87a; }
+[data-cds=ChatComposerEditor] { caret-color: #39e87a; }
+
+::selection { background: #39e87a; color: #0a110c; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(57, 232, 122, .35); border-radius: 0; }
+
+/* the states: one layer, a band near the top while thinking (still, under less motion), the rim while waiting */
+body::after {
+  content: ""; position: fixed; left: 0; right: 0; top: 0; height: 140px; pointer-events: none; z-index: 2147483646;
+  opacity: 0; transition: opacity .4s;
+  background: linear-gradient(to bottom, rgba(57, 232, 122, 0), rgba(57, 232, 122, .08) 80%, rgba(57, 232, 122, .2));
+}
+html[data-theme-state=thinking] body::after { opacity: 1; }
+html[data-theme-state=waiting] body::after {
+  opacity: 1; height: 100%; background: none; box-shadow: inset 0 0 70px rgba(255, 190, 60, .35);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-reduce-motion=true])::after { animation: terminal-hum 6s steps(60) infinite; }
+  html:not([data-reduce-motion=true])[data-theme-event=tool]::after { animation: terminal-flicker .5s steps(4); }
+  html:not([data-reduce-motion=true])[data-theme-state=thinking] body::after { animation: terminal-sweep 2.6s linear infinite; }
+  html:not([data-reduce-motion=true])[data-theme-state=waiting] body::after { animation: terminal-pulse 1.4s ease-in-out infinite alternate; }
+}
+@keyframes terminal-hum { 0%, 100% { opacity: 1; } 50% { opacity: .85; } }
+@keyframes terminal-flicker { 0% { opacity: 1; } 25% { opacity: .3; } 50% { opacity: 1; } 75% { opacity: .5; } }
+@keyframes terminal-sweep { from { transform: translateY(-140px); } to { transform: translateY(100vh); } }
+@keyframes terminal-pulse { from { opacity: .4; } to { opacity: 1; } }
+
+/* The New session screen: Clawd in green phosphor inside an old CRT monitor, a boot line typing itself out beside
+   him, and now and then a glitch through the picture. [data-testid=start-card-clawd] holds him: 320px wide and 0px
+   tall, he stands on its right end. Its two pseudo-elements are the monitor and the line. */
+[data-testid=start-card-clawd] { filter: grayscale(1) sepia(1) hue-rotate(75deg) saturate(3) drop-shadow(0 0 4px rgba(57, 232, 122, .8)); }
+[data-testid=start-card-clawd]::before {
+  /* (he peeks over the card: his middle is about 16px above it and 31px in from the right) */
+  content: ""; position: absolute; right: 6px; bottom: -4px; width: 50px; height: 40px; pointer-events: none;
+  border: 2px solid rgba(57, 232, 122, .7); border-radius: 9px / 12px; background: rgba(57, 232, 122, .06);
+  box-shadow: 0 0 12px rgba(57, 232, 122, .35), inset 0 0 10px rgba(57, 232, 122, .25);
+}
+[data-testid=start-card-clawd]::after {
+  /* (23 characters in 24ch: the app's letter spacing makes them a little wider than ch) */
+  content: "> boot clawd.sys ... ok"; position: absolute; left: 0; bottom: 14px; width: 24ch; overflow: hidden;
+  white-space: nowrap; font: 13px/1.2 "Cascadia Code", Consolas, monospace; color: #39e87a; pointer-events: none;
+  text-shadow: 0 0 6px rgba(57, 232, 122, .5); border-right: .6ch solid #39e87a;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-reduce-motion=true]) [data-testid=start-card-clawd] { animation: terminal-glitch 5s steps(1) infinite; }
+  html:not([data-reduce-motion=true]) [data-testid=start-card-clawd]::after {
+    animation: terminal-type 1.8s steps(24) .3s both, terminal-caret .8s steps(1) 2.1s infinite;
+  }
+}
+@keyframes terminal-type { from { width: 0; } to { width: 24ch; } }
+@keyframes terminal-caret { 50% { border-right-color: transparent; } }
+@keyframes terminal-glitch {
+  0%, 90%, 100% { transform: none; }
+  91% { transform: translateX(3px) skewX(-8deg); }
+  93% { transform: translateX(-2px); }
+  95% { transform: translateX(1px) skewX(4deg); }
+}
+
+/* the prompt box: a shell line, black with a thin green rule, which lights up while you type and dims while Claude
+   works; a block caret where the browser draws one */
+[data-cds=ChatComposer] > .bg-surface-3 {
+  background: #050a06 !important; transition: box-shadow .2s;
+  box-shadow: 0 0 0 1px rgba(57, 232, 122, .45) !important;
+}
+[data-cds=ChatComposer] > .bg-surface-3:focus-within {
+  box-shadow: 0 0 0 1px #39e87a, 0 0 18px rgba(57, 232, 122, .35) !important;
+}
+html[data-theme-state=thinking] [data-cds=ChatComposer] > .bg-surface-3 { box-shadow: 0 0 0 1px rgba(57, 232, 122, .2) !important; }
+[data-cds=ChatComposerEditor] .ProseMirror { caret-shape: block; }

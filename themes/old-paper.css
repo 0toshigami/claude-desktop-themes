@@ -1,0 +1,83 @@
+/* Old Paper: an old book. Paper grain and browned edges over the window, a large first letter on each of Claude's
+   replies, nearly square corners and slow motion (its vars). A running tool darkens the grain like spreading ink, a
+   failed one blots the edges red, a finished turn warms the page. While Claude works an ink line writes itself across
+   the top; while a tool waits for your yes the edges warm sealing-wax red. */
+
+html::after {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 2147483646; opacity: .35;
+  mix-blend-mode: multiply;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .55  0 0 0 0 .42  0 0 0 0 .28  0 0 0 .55 0'/></filter><rect width='240' height='240' filter='url%28%23g%29'/></svg>");
+  transition: opacity .5s;
+}
+html[data-theme-event=tool]::after { opacity: .55; }
+html::before {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 2147483646; mix-blend-mode: multiply;
+  background: radial-gradient(ellipse at center, transparent 60%, rgba(140, 95, 50, .28) 100%);
+  transition: background .6s;
+}
+html[data-theme-event=error]::before {
+  background: radial-gradient(ellipse at center, transparent 50%, rgba(170, 40, 30, .35) 100%);
+}
+html[data-theme-event=done]::before {
+  background: radial-gradient(ellipse at center, rgba(255, 210, 140, .15), rgba(140, 95, 50, .3) 100%);
+}
+
+[data-cds=AssistantMessage] [data-cds=Prose] > p:first-child::first-letter {
+  float: left; font-size: 2.7em; line-height: .9; padding: .06em .08em 0 0; color: #a5522c;
+  font-family: Georgia, "Times New Roman", serif;
+}
+::selection { background: #a5522c; color: #f2e9d6; }
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(58, 47, 34, .3); border-radius: 2px; }
+
+/* the states: an ink line writes itself across the top again and again while Claude works (a still line under less
+   motion); a sealing-wax red warms the edges, breathing, while a tool waits for your yes */
+body::after {
+  content: ""; position: fixed; left: 0; right: 0; top: 0; height: 2px; pointer-events: none; z-index: 2147483646;
+  opacity: 0; transition: opacity .6s; transform-origin: left; background: #3a2f22;
+}
+html[data-theme-state=thinking] body::after { opacity: .55; }
+html[data-theme-state=waiting] body::after {
+  opacity: 1; height: 100%; background: none; box-shadow: inset 0 0 70px rgba(165, 40, 30, .28);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-reduce-motion=true])[data-theme-state=thinking] body::after { animation: paper-write 2.8s ease-in-out infinite; }
+  html:not([data-reduce-motion=true])[data-theme-state=waiting] body::after { animation: paper-breathe 1.8s ease-in-out infinite alternate; }
+}
+@keyframes paper-write { 0% { transform: scaleX(0); opacity: .55; } 80% { transform: scaleX(1); opacity: .55; } 100% { transform: scaleX(1); opacity: 0; } }
+@keyframes paper-breathe { from { opacity: .35; } to { opacity: 1; } }
+
+/* The New session screen: Clawd printed in sepia ink inside a postage stamp, which presses down onto the page as it
+   opens, and a letter's first line written in beside him. [data-testid=start-card-clawd] holds him (320px by 0, he
+   peeks over the card at its right end, his middle about 16px up and 31px in); its ::before is the stamp, its ::after
+   the line. His filter is on him alone (> *). */
+[data-testid=start-card-clawd] > * { filter: sepia(.9) saturate(.8) brightness(.85); }
+[data-testid=start-card-clawd]::before {
+  content: ""; position: absolute; right: 6px; bottom: -4px; width: 50px; height: 40px; pointer-events: none;
+  border: 2px dashed rgba(165, 82, 44, .65); outline: 1px solid rgba(165, 82, 44, .3); outline-offset: 3px;
+  background: rgba(165, 82, 44, .05); rotate: -5deg;
+}
+[data-testid=start-card-clawd]::after {
+  /* (clear of the stamp: the right 80px are his) */
+  content: "Dear friend, what shall we write?"; position: absolute; left: 0; bottom: 12px; pointer-events: none;
+  white-space: nowrap; font: italic 15px Georgia, "Times New Roman", serif; color: #6b4a2c;
+  max-width: calc(100% - 80px); overflow: hidden; text-overflow: ellipsis;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-reduce-motion=true]) [data-testid=start-card-clawd]::before { animation: paper-stamp .5s cubic-bezier(.3, 1.5, .6, 1) .2s both; }
+  html:not([data-reduce-motion=true]) [data-testid=start-card-clawd]::after { animation: start-reveal 2s ease-out .5s both; }
+}
+@keyframes paper-stamp { from { scale: 1.5; opacity: 0; } to { scale: 1; opacity: 1; } }
+@keyframes start-reveal { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+
+/* the prompt box: a ruled sheet, faint lines under the writing and an ink rule at its foot that darkens while you
+   write */
+[data-cds=ChatComposer] > .bg-surface-3 {
+  /* one rule a line of writing (28px, the editor's row), counted up from the last line's foot: 8px above the box's */
+  background: repeating-linear-gradient(to bottom, transparent 0 27px, rgba(140, 95, 50, .12) 27px 28px) 0 calc(100% - 8px) / 100% 28px,
+    #fbf5e8 !important;
+  border-bottom: 2px solid rgba(58, 47, 34, .35) !important; transition: border-color .4s;
+}
+[data-cds=ChatComposer] > .bg-surface-3:focus-within { border-bottom-color: #3a2f22 !important; }

@@ -1,0 +1,86 @@
+/* Sunset Cloud: a dusk sky. A warm glow rises from the bottom of the window and soft clouds drift across it;
+   glowing corners (its vars). A running tool brightens the glow, a failed one turns it red, a finished turn
+   flares it gold. While Claude works the low sun breathes; while a tool waits for your yes a violet glow pulses at
+   the edges. */
+
+html::before {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 2147483646; mix-blend-mode: screen;
+  background: radial-gradient(120% 55% at 50% 115%, rgba(255, 138, 107, .28), transparent 65%);
+  transition: background .5s, opacity .5s; opacity: .8;
+}
+html[data-theme-event=tool]::before { opacity: 1; }
+html[data-theme-event=error]::before {
+  background: radial-gradient(120% 55% at 50% 115%, rgba(255, 70, 70, .35), transparent 65%);
+}
+html[data-theme-event=done]::before {
+  background: radial-gradient(120% 60% at 50% 115%, rgba(255, 200, 120, .4), transparent 70%); opacity: 1;
+}
+html::after {
+  content: ""; position: fixed; top: 0; bottom: 0; left: -600px; right: 0; pointer-events: none; z-index: 2147483646;
+  opacity: .1; mix-blend-mode: screen;
+  background:
+    radial-gradient(90px 34px at 120px 90px, #f7e8e2, transparent),
+    radial-gradient(130px 40px at 420px 260px, #f7e8e2, transparent),
+    radial-gradient(70px 26px at 300px 470px, #f7e8e2, transparent);
+  background-size: 600px 560px;
+}
+
+::selection { background: #ff8a6b; color: #2b2030; }
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 138, 107, .35); border-radius: 9px; }
+
+/* the states: the low sun breathes while Claude works; a violet glow pulses at the edges while a tool waits for your
+   yes */
+body::after {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 2147483646; opacity: 0;
+  transition: opacity .8s; mix-blend-mode: screen;
+  background: radial-gradient(80% 45% at 50% 108%, rgba(255, 170, 110, .35), transparent 70%);
+}
+html[data-theme-state=thinking] body::after { opacity: .8; }
+html[data-theme-state=waiting] body::after {
+  opacity: 1; mix-blend-mode: normal; background: none; box-shadow: inset 0 0 80px rgba(190, 120, 255, .3);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-reduce-motion=true])::after { animation: sunset-drift 90s linear infinite; }
+  html:not([data-reduce-motion=true])[data-theme-state=thinking] body::after { animation: sunset-breathe 3s ease-in-out infinite alternate; }
+  html:not([data-reduce-motion=true])[data-theme-state=waiting] body::after { animation: sunset-breathe 1.5s ease-in-out infinite alternate; }
+}
+@keyframes sunset-drift { from { transform: translateX(0); } to { transform: translateX(600px); } }
+@keyframes sunset-breathe { from { opacity: .3; } to { opacity: 1; } }
+
+/* The New session screen: Clawd, in his own coral, floating on a cloud beside the setting sun, a greeting drawn in
+   beside him. [data-testid=start-card-clawd] holds him (320px by 0, he peeks over the card at its right end, his
+   middle about 16px up and 31px in); its ::before is the sun and the cloud, the cloud over his feet (z-index 1; the
+   sun stands clear of him); its ::after is the greeting. */
+[data-testid=start-card-clawd] > * { filter: drop-shadow(0 0 8px rgba(255, 138, 107, .55)); }
+[data-testid=start-card-clawd]::before {
+  content: ""; position: absolute; right: -20px; bottom: -8px; width: 100px; height: 50px; pointer-events: none; z-index: 1;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='50'><circle cx='86' cy='18' r='17' fill='%23ff8a6b' opacity='.25'/><circle cx='86' cy='18' r='11' fill='%23ffb27a' opacity='.9'/><g fill='%23f7e8e2'><ellipse cx='49' cy='44' rx='24' ry='6'/><ellipse cx='37' cy='40' rx='10' ry='7'/><ellipse cx='56' cy='38' rx='12' ry='8'/></g></svg>");
+}
+[data-testid=start-card-clawd]::after {
+  content: "what shall we build tonight?"; position: absolute; left: 0; bottom: 12px; pointer-events: none;
+  white-space: nowrap; font-size: 15px; color: #ffb27a;
+  max-width: calc(100% - 100px); overflow: hidden; text-overflow: ellipsis; /* (clear of him, the cloud and the sun) */
+}
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-reduce-motion=true]) [data-testid=start-card-clawd] > *,
+  html:not([data-reduce-motion=true]) [data-testid=start-card-clawd]::before { animation: sunset-float 3.2s ease-in-out infinite alternate; }
+  html:not([data-reduce-motion=true]) [data-testid=start-card-clawd]::after { animation: start-reveal 1.4s ease-out .3s both; }
+}
+@keyframes sunset-float { from { translate: 0 -3px; } to { translate: 0 1px; } }
+@keyframes start-reveal { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+
+/* the prompt box: a rim that fades from dusk violet to coral; while Claude works the colors turn slowly around it */
+@property --sunset-turn { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+[data-cds=ChatComposer] > .bg-surface-3 {
+  border: 1.5px solid transparent !important; transition: box-shadow .3s;
+  background: linear-gradient(#352838, #352838) padding-box,
+    conic-gradient(from var(--sunset-turn), #8a5cc7, #ff8a6b, #ffc27a, #ff8a6b, #8a5cc7) border-box !important;
+}
+[data-cds=ChatComposer] > .bg-surface-3:focus-within { box-shadow: 0 6px 26px rgba(255, 138, 107, .22) !important; }
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-reduce-motion=true])[data-theme-state=thinking] [data-cds=ChatComposer] > .bg-surface-3 { animation: sunset-turn 4s linear infinite; }
+}
+@keyframes sunset-turn { to { --sunset-turn: 360deg; } }

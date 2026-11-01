@@ -1,0 +1,100 @@
+/* Night Sea: a starry sky over a slow sea. Stars twinkle over the window, a wave rolls along its bottom edge; cool
+   glowing shadows (its vars). A running tool lifts the wave's crest, a failed one turns the sea red, a finished
+   turn brightens the stars. While Claude works shooting stars cross the sky; while a tool waits for your yes the
+   edges glow blue. */
+
+html::after {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 2147483646; opacity: .45;
+  transition: opacity .4s;
+  background:
+    radial-gradient(1.5px 1.5px at 30px 40px, #dce6fa, transparent),
+    radial-gradient(1px 1px at 120px 150px, #dce6fa, transparent),
+    radial-gradient(1.5px 1.5px at 210px 80px, #9cc8ff, transparent),
+    radial-gradient(1px 1px at 260px 220px, #dce6fa, transparent),
+    radial-gradient(2px 2px at 80px 260px, #ffffff, transparent),
+    radial-gradient(1px 1px at 170px 290px, #9cc8ff, transparent);
+  background-size: 300px 300px;
+}
+html[data-theme-event=done]::after { opacity: .9; }
+html::before {
+  content: ""; position: fixed; left: 0; right: -400px; bottom: 0; height: 46px; pointer-events: none;
+  z-index: 2147483646; opacity: .35; transition: opacity .3s, height .3s;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='46'><path d='M0 22 Q50 6 100 22 T200 22 T300 22 T400 22 V46 H0 Z' fill='%235aaeff'/></svg>") repeat-x bottom / 400px 100%;
+}
+html[data-theme-event=tool]::before { opacity: .6; height: 60px; }
+html[data-theme-event=error]::before {
+  opacity: .6;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='46'><path d='M0 22 Q50 6 100 22 T200 22 T300 22 T400 22 V46 H0 Z' fill='%23ff5a6e'/></svg>");
+}
+
+::selection { background: #5aaeff; color: #0f1a2c; }
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(90, 174, 255, .3); border-radius: 9px; }
+
+/* the states: a shooting star crosses the sky again and again while Claude works (a still streak under less motion);
+   a blue glow pulses at the edges while a tool waits for your yes */
+body::after {
+  content: ""; position: fixed; top: 12%; left: 10%; width: 160px; height: 2px; pointer-events: none;
+  z-index: 2147483646; opacity: 0; transform: rotate(18deg);
+  background: linear-gradient(90deg, rgba(220, 230, 250, 0), rgba(220, 230, 250, .9));
+}
+html[data-theme-state=thinking] body::after { opacity: .7; }
+html[data-theme-state=waiting] body::after {
+  opacity: 1; top: 0; left: 0; width: 100%; height: 100%; transform: none; background: none;
+  box-shadow: inset 0 0 80px rgba(90, 174, 255, .35);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-reduce-motion=true])::after { animation: sea-twinkle 4s ease-in-out infinite alternate; }
+  html:not([data-reduce-motion=true])::before { animation: sea-roll 14s linear infinite; }
+  html:not([data-reduce-motion=true])[data-theme-state=thinking] body::after { animation: sea-shoot 3.2s ease-in infinite; }
+  html:not([data-reduce-motion=true])[data-theme-state=waiting] body::after { animation: sea-pulse 1.5s ease-in-out infinite alternate; }
+}
+@keyframes sea-twinkle { from { opacity: .3; } to { opacity: .55; } }
+@keyframes sea-roll { from { transform: translateX(0); } to { transform: translateX(-400px); } }
+@keyframes sea-shoot {
+  0% { opacity: 0; transform: translate(0, 0) rotate(18deg); }
+  10% { opacity: .9; }
+  45%, 100% { opacity: 0; transform: translate(60vw, 20vw) rotate(18deg); }
+}
+@keyframes sea-pulse { from { opacity: .35; } to { opacity: 1; } }
+
+/* The New session screen: sea-blue Clawd in a small boat under a crescent moon, both bobbing on a wave, a greeting
+   drawn in beside him. [data-testid=start-card-clawd] holds him (320px by 0, he peeks over the card at its right end,
+   his middle about 16px up and 31px in); its ::before is the moon, the boat and the wave, drawn over him (z-index 1)
+   so the hull hides his feet; its ::after is the greeting. His filter is on him alone (> *). */
+[data-testid=start-card-clawd] > * { filter: hue-rotate(195deg) saturate(.9) drop-shadow(0 0 6px rgba(90, 174, 255, .6)); }
+[data-testid=start-card-clawd]::before {
+  content: ""; position: absolute; right: -14px; bottom: -6px; width: 90px; height: 50px; pointer-events: none; z-index: 1;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='50'><circle cx='78' cy='11' r='8' fill='%23f4f1d0'/><circle cx='82' cy='8' r='7' fill='%230f1a2c'/><path d='M22 40 H68 L60 48 H30 Z' fill='%23a0703f'/><path d='M22 40 H68' stroke='%23c99a5f' stroke-width='2'/><path d='M0 47 Q11 42 22 47 T45 47 T67 47 T90 47' fill='none' stroke='%235aaeff' stroke-width='2'/></svg>");
+}
+[data-testid=start-card-clawd]::after {
+  content: "time to set sail ⚓"; position: absolute; left: 0; bottom: 12px; pointer-events: none;
+  white-space: nowrap; font-size: 15px; color: #9cc8ff;
+  max-width: calc(100% - 80px); overflow: hidden; text-overflow: ellipsis; /* (clear of him and the boat) */
+}
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-reduce-motion=true]) [data-testid=start-card-clawd] > *,
+  html:not([data-reduce-motion=true]) [data-testid=start-card-clawd]::before { animation: sea-bob 2.4s ease-in-out infinite alternate; }
+  html:not([data-reduce-motion=true]) [data-testid=start-card-clawd]::after { animation: start-reveal 1.4s ease-out .3s both; }
+}
+@keyframes sea-bob { from { translate: 0 -2px; } to { translate: 0 2px; } }
+@keyframes start-reveal { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+
+/* the prompt box: frosted glass over the night, with a thin wave along its foot that brightens while you type and
+   rolls while Claude works */
+[data-cds=ChatComposer] > .bg-surface-3 {
+  background: rgba(30, 48, 78, .55) !important; backdrop-filter: blur(12px);
+  box-shadow: inset 0 0 0 1px rgba(156, 200, 255, .18) !important; overflow: hidden;
+}
+[data-cds=ChatComposer] > .bg-surface-3::after {
+  content: ""; position: absolute; left: 0; right: -60px; bottom: 0; height: 6px; pointer-events: none; opacity: .45;
+  transition: opacity .3s;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='60' height='6'><path d='M0 4 Q15 0 30 4 T60 4' fill='none' stroke='%235aaeff' stroke-width='1.5'/></svg>") repeat-x;
+}
+[data-cds=ChatComposer] > .bg-surface-3:focus-within::after { opacity: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-reduce-motion=true])[data-theme-state=thinking] [data-cds=ChatComposer] > .bg-surface-3::after { animation: sea-box 2s linear infinite; }
+}
+@keyframes sea-box { to { transform: translateX(-60px); } }

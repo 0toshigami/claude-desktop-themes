@@ -1,0 +1,86 @@
+/* Sakura: petals drifting down over the window, round soft corners and a little bounce (its vars). A running tool
+   glows the top edge pink, a failed one blushes the window's edges, a finished turn sends more petals. While Claude
+   works more petals fall, faster; while a tool waits for your yes the edges breathe pink. */
+
+html::after {
+  content: ""; position: fixed; left: 0; right: 0; top: -400px; height: calc(100% + 400px);
+  pointer-events: none; z-index: 2147483646; opacity: .5; transition: opacity .6s;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'><g fill='%23f4a6bd'><ellipse cx='40' cy='60' rx='7' ry='4' transform='rotate(30 40 60)'/><ellipse cx='210' cy='30' rx='6' ry='3.5' transform='rotate(-20 210 30)'/><ellipse cx='330' cy='150' rx='8' ry='4.5' transform='rotate(60 330 150)'/><ellipse cx='120' cy='230' rx='6' ry='3.5' transform='rotate(10 120 230)'/><ellipse cx='280' cy='320' rx='7' ry='4' transform='rotate(-45 280 320)'/><ellipse cx='60' cy='360' rx='5' ry='3' transform='rotate(75 60 360)'/></g><g fill='%23e0567f' opacity='.6'><ellipse cx='170' cy='130' rx='5' ry='3' transform='rotate(40 170 130)'/><ellipse cx='370' cy='260' rx='5' ry='3' transform='rotate(-30 370 260)'/></g></svg>") repeat;
+}
+html[data-theme-event=done]::after { opacity: .9; }
+/* the reactions: a whole-window layer that fades in fast and out slowly, so nothing clings to one part */
+html::before {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 2147483646; opacity: 0;
+  transition: opacity .9s ease-out;
+  background: linear-gradient(to bottom, rgba(244, 166, 189, .5), rgba(244, 166, 189, 0) 140px);
+}
+html[data-theme-event=tool]::before { opacity: 1; transition-duration: .2s; }
+html[data-theme-event=error]::before {
+  opacity: 1; transition-duration: .2s;
+  background: radial-gradient(ellipse at center, rgba(224, 86, 127, 0) 55%, rgba(224, 86, 127, .32) 100%);
+}
+
+::selection { background: #f4a6bd; color: #4b2a35; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #f4b6c8; border-radius: 10px; border: 2px solid #fff4f6; }
+
+/* the states: a second, quicker flurry of petals while Claude works; a soft pink glow at the edges, breathing, while
+   a tool waits for your yes */
+body::after {
+  content: ""; position: fixed; left: 0; right: 0; top: -300px; height: calc(100% + 300px); pointer-events: none;
+  z-index: 2147483646; opacity: 0; transition: opacity .8s;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><g fill='%23f4a6bd'><ellipse cx='70' cy='20' rx='6' ry='3.5' transform='rotate(-35 70 20)'/><ellipse cx='250' cy='90' rx='7' ry='4' transform='rotate(25 250 90)'/><ellipse cx='30' cy='170' rx='5' ry='3' transform='rotate(50 30 170)'/><ellipse cx='180' cy='210' rx='6' ry='3.5' transform='rotate(-10 180 210)'/></g><g fill='%23e0567f' opacity='.55'><ellipse cx='130' cy='80' rx='5' ry='3' transform='rotate(65 130 80)'/><ellipse cx='280' cy='270' rx='4' ry='2.5' transform='rotate(-55 280 270)'/></g></svg>") repeat;
+}
+html[data-theme-state=thinking] body::after { opacity: .65; }
+html[data-theme-state=waiting] body::after {
+  opacity: 1; top: 0; height: 100%; background: none; box-shadow: inset 0 0 80px rgba(224, 86, 127, .32);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-reduce-motion=true])::after { animation: sakura-fall 22s linear infinite; }
+  html:not([data-reduce-motion=true])[data-theme-state=thinking] body::after { animation: sakura-flurry 8s linear infinite; }
+  html:not([data-reduce-motion=true])[data-theme-state=waiting] body::after { animation: sakura-breathe 1.8s ease-in-out infinite alternate; }
+}
+@keyframes sakura-fall { from { transform: translateY(0); } to { transform: translateY(400px); } }
+@keyframes sakura-flurry { from { transform: translateY(0); } to { transform: translateY(300px); } }
+@keyframes sakura-breathe { from { opacity: .35; } to { opacity: 1; } }
+
+/* The New session screen: pink Clawd swaying under a blossoming branch, a greeting drawn in beside him.
+   [data-testid=start-card-clawd] holds him (320px by 0, he peeks over the card at its right end, his middle about
+   16px up and 31px in); its ::before is the branch, its ::after the greeting. His filter is on him alone (> *), so
+   the branch keeps its own colors. */
+[data-testid=start-card-clawd] > * { filter: hue-rotate(-32deg) saturate(1.15); }
+[data-testid=start-card-clawd]::before {
+  content: ""; position: absolute; right: -26px; bottom: 26px; width: 120px; height: 60px; pointer-events: none;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='60'><path d='M120 8 Q80 4 60 18 T16 32' fill='none' stroke='%237a4a3a' stroke-width='3' stroke-linecap='round'/><path d='M80 9 Q87 18 82 27' fill='none' stroke='%237a4a3a' stroke-width='2' stroke-linecap='round'/><g fill='%23f4a6bd'><circle cx='17' cy='32' r='5'/><circle cx='40' cy='24' r='6'/><circle cx='61' cy='17' r='5'/><circle cx='82' cy='28' r='5'/><circle cx='99' cy='8' r='6'/></g><g fill='%23e0567f'><circle cx='17' cy='32' r='1.6'/><circle cx='40' cy='24' r='2'/><circle cx='82' cy='28' r='1.6'/><circle cx='99' cy='8' r='2'/></g></svg>");
+}
+[data-testid=start-card-clawd]::after {
+  content: "what shall we make today? ✿"; position: absolute; left: 0; bottom: 12px; pointer-events: none;
+  white-space: nowrap; font-size: 15px; font-style: italic; color: #e0567f;
+  max-width: calc(100% - 80px); overflow: hidden; text-overflow: ellipsis; /* (clear of him and the branch) */
+}
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-reduce-motion=true]) [data-testid=start-card-clawd] > * { animation: sakura-sway 3s ease-in-out infinite alternate; }
+  html:not([data-reduce-motion=true]) [data-testid=start-card-clawd]::after { animation: start-reveal 1.4s ease-out .3s both; }
+}
+/* (the individual rotate and translate properties: they add to whatever transform the app gives him) */
+@keyframes sakura-sway { from { rotate: -3deg; } to { rotate: 3deg; } }
+@keyframes start-reveal { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+
+/* the prompt box: a pill with a pink ribbon for a rim and a petal on its corner, glowing soft pink while you type;
+   while a tool waits for your yes it breathes with the window's edges */
+[data-cds=ChatComposer] > .bg-surface-3 {
+  border: 1.5px solid transparent !important; transition: box-shadow .3s;
+  background: linear-gradient(#fff9fa, #fff9fa) padding-box, linear-gradient(120deg, #f4a6bd, #e0567f, #f4a6bd) border-box !important;
+}
+[data-cds=ChatComposer] > .bg-surface-3::after {
+  /* (inside the rim: the box clips what reaches past it) */
+  content: ""; position: absolute; top: 3px; right: 46px; width: 18px; height: 12px; pointer-events: none;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='12'><ellipse cx='9' cy='6' rx='8' ry='4.5' fill='%23f4a6bd' transform='rotate(-20 9 6)'/><ellipse cx='9' cy='6' rx='3' ry='1.5' fill='%23e0567f' opacity='.6' transform='rotate(-20 9 6)'/></svg>");
+}
+[data-cds=ChatComposer] > .bg-surface-3:focus-within { box-shadow: 0 0 0 4px rgba(244, 166, 189, .3), 0 6px 20px rgba(224, 86, 127, .15) !important; }
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-reduce-motion=true])[data-theme-state=waiting] [data-cds=ChatComposer] > .bg-surface-3 { animation: sakura-box 1.8s ease-in-out infinite alternate; }
+}
+@keyframes sakura-box { from { box-shadow: 0 0 0 0 rgba(224, 86, 127, 0); } to { box-shadow: 0 0 0 5px rgba(224, 86, 127, .25); } }

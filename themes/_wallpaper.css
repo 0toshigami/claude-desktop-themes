@@ -1,0 +1,65 @@
+/* For every theme with a live wallpaper (the mod adds it after _base.css): the extension draws the scene on a canvas
+   under the page; this sheet paints the sky behind it and makes the page see-through over it. The sidebar, the prompt
+   box and the cards stay solid. Each theme sets its own look in vars: --wall-sky (the sky, any CSS background),
+   --wall-halo (a soft glow around the writing, so it reads over the tiles), --wall-glass (the prompt box),
+   --wall-rim (rims and edges) and --wall-greet (the New session greeting, a quoted string). */
+
+/* (the sky on <html>, <body> clear: a body background of its own would paint over the canvas) */
+html { background: var(--wall-sky) fixed !important; }
+body { background: transparent !important; }
+/* (--epitaxy-transcript-surface: what the chat's backings paint, the sticky band behind the prompt box among them;
+   the rest paint --cds-surface-1, which cards and menus share, so those layers go one by one) */
+* { --cds-page-bg: transparent !important; --epitaxy-transcript-surface: transparent !important; }
+.root > .grid.bg-surface-1, main.dframe-content, .tiles-shell { background: transparent !important; }
+
+.epitaxy-transcript-typography, [data-testid=start-card-clawd]::after {
+  text-shadow: 0 0 3px var(--wall-halo), 0 0 6px var(--wall-halo), 0 0 10px var(--wall-halo);
+}
+
+::selection { background: var(--cds-text-accent); color: var(--cds-surface-0); }
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--wall-rim); border-radius: 9px; }
+
+/* while a tool waits for your yes the edges glow, breathing */
+body::after {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 2147483646; opacity: 0; transition: opacity .6s;
+  box-shadow: inset 0 0 80px var(--wall-rim);
+}
+html[data-theme-state=waiting] body::after { opacity: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-reduce-motion=true])[data-theme-state=waiting] body::after { animation: wall-breathe 1.6s ease-in-out infinite alternate; }
+}
+@keyframes wall-breathe { from { opacity: .35; } to { opacity: 1; } }
+
+/* the prompt box: frosted glass, the scene faint behind it */
+[data-cds=ChatComposer] > .bg-surface-3 {
+  background: var(--wall-glass) !important; backdrop-filter: blur(10px);
+  box-shadow: inset 0 0 0 1px var(--wall-rim) !important;
+}
+/* (the New session cards, the environments list among them, paint --epitaxy-transcript-surface too: glass, as the
+   prompt box, not the clear of the chat's backings) */
+[data-testid=epitaxy-start-card] [class*="epitaxy-transcript-surface"],
+[data-testid^=start-card][class*="epitaxy-transcript-surface"] {
+  background: var(--wall-glass) !important; backdrop-filter: blur(10px);
+}
+/* (the tiles beside the main chat, a side chat among them: frosted glass over the scene, so their writing reads; the
+   main chat's tile, the one holding .epitaxy-chat-panel, stays clear) */
+.tiles-shell:not(:has(.epitaxy-chat-panel)) {
+  background: var(--wall-glass) !important; backdrop-filter: blur(14px);
+  box-shadow: inset 1px 0 0 var(--wall-rim);
+}
+[data-cds=ChatComposer] > .bg-surface-3:focus-within { box-shadow: inset 0 0 0 1.5px var(--cds-text-accent) !important; }
+
+/* The New session screen: Clawd glowing in the accent, a greeting beside him. [data-testid=start-card-clawd] holds him
+   (320px by 0, he peeks over the card at its right end); its ::after is the greeting. */
+[data-testid=start-card-clawd] > * { filter: drop-shadow(0 0 8px var(--wall-rim)); }
+[data-testid=start-card-clawd]::after {
+  content: var(--wall-greet); position: absolute; left: 0; bottom: 12px; pointer-events: none;
+  white-space: nowrap; font-size: 15px; color: var(--cds-text-accent);
+  max-width: calc(100% - 80px); overflow: hidden; text-overflow: ellipsis; /* (clear of him) */
+}
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-reduce-motion=true]) [data-testid=start-card-clawd]::after { animation: start-reveal 1.4s ease-out .3s both; }
+}
+@keyframes start-reveal { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }

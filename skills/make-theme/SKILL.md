@@ -1,0 +1,140 @@
+---
+name: make-theme
+description: Make a new Claude Desktop theme for the desktop-themes mod, in the style of its own themes, from a text idea, a reference image, or both. Use when the person asks to create, design or make their own theme, color scheme or live ASCII wallpaper for Claude Desktop. Drafts the idea as an Artifact for the person to approve before anything is built.
+---
+
+# Make a theme
+
+This skill makes a theme for the desktop-themes mod. The mod's root is two folders up from this file (`../..`).
+Before you start, read `hooks/themes.ts` there: its themes are the style to follow.
+
+## 1. Find out which kind of theme
+
+There are two kinds. If the person did not say which kind, explain both and ask with `AskUserQuestion`. Do not guess.
+
+- **Simple theme.** Colors, a font, corner shapes, shadows, a status line, and optionally a stylesheet with
+  decorations and reactions (a glow while a tool runs, a shake on an error). It is data only. It goes into the
+  person's own themes folder, shows in the `/themes` strip at once, and a mod update never removes it.
+- **Live wallpaper.** All of the above, plus an animated ASCII scene behind the window, drawn by the extension (like
+  Moonlit, Koi Pond or Lantern Night). A scene is code, so it goes into the mod's own files. Tell the person three
+  things: Claude Desktop needs a restart to show it; a mod update can overwrite it, so they keep their own copy; and
+  it takes longer to make, with a few rounds of review.
+
+## 2. Read the references
+
+The person can give text, an image, or both.
+
+- **Text:** take the mood, the motifs, the colors and the place it names.
+- **Image:** read it with the Read tool. Take its palette (5 to 8 colors: a background, a text color with strong
+  contrast against it, one accent), its mood, and its main motifs. For a live wallpaper, also take its shapes and
+  composition: what moves, where it sits, and what stays still.
+
+If a reference does not give you enough, ask one short question. Do not ask about things you can choose well
+yourself.
+
+## 3. Draft it as an Artifact, and wait for a yes
+
+Do not build before the person sees a draft and approves it.
+
+1. Write the theme as JSON in your scratchpad, for example `draft/theme.json`. The fields are in
+   [The theme file](#the-theme-file). For a simple theme with a stylesheet, also write `draft/theme.css`.
+2. For a live wallpaper, copy `extension/theme.js` from the mod into your scratchpad and add the scene to the copy.
+   Read [Live wallpaper scenes](#live-wallpaper-scenes) first.
+3. Build the draft page with this skill's script:
+   ```bash
+   node "<this skill's folder>/draft.mjs" --theme draft/theme.json [--css draft/theme.css] [--theme-js draft/theme.js] [--start 20] --out draft/<id>-draft.html
+   ```
+   The page is a small Claude Desktop mock painted by the mod's real `theme.js`, so it shows the theme as it will
+   look. `--start` sets how many seconds into the scene the page starts.
+4. Publish the page as an Artifact. Load the artifact skills first, as the Artifact tool asks. In your reply, name
+   the colors you chose and why, and the motifs you took from the references.
+5. Change the draft until the person says yes. Publish each new version to the same Artifact.
+
+If the person wants to compare versions, make a page with tabs that switch between them, each tab an iframe of one
+draft.
+
+## 4. Build it
+
+### A simple theme
+
+1. Write `<id>.json`, and `<id>.css` if the theme has a stylesheet, to the person's themes folder:
+   `%USERPROFILE%\.claude\desktop-themes\` on Windows. Create the folder if it is not there.
+2. Tell the person to run `/themes`. The strip reads the folder each time it opens, and the theme shows in the
+   "Your themes" row. A press on its name puts it on, with no restart.
+
+The mod refuses a file with a bad `id`, a missing name, or colors that are not `#rrggbb`. It also refuses an `id`
+that a built-in theme uses. Check these before you write the file.
+
+### A live wallpaper
+
+1. Add the scene to `extension/theme.js` in the mod: its pictures and helpers before the line
+   `// A scene: cell, what stays in place`, and its entry in `SCENES`.
+2. Add the theme to `THEMES` in `hooks/themes.ts` with `live(...)`, as the other wallpapers do. Its `deco` is the
+   preview tile drawing for terminals; the strip on the desktop uses a capture (step 4).
+3. Copy the new `extension/theme.js` over the installed one:
+   `%APPDATA%\Claude\extensions\fmkadmapgofadopljbjfkapdkoienihi\theme.js`. Compare the two files' hashes after.
+4. Make the strip's tile from a capture of the real scene: run the scripts in `tools/thumbs/` (`pages.ts`, then
+   `capture.ps1 <id>`, then `embed.mjs`). They write `hooks/thumbs.ts`.
+5. Run `claude plugin validate` and `claude plugin test` on the mod folder.
+6. Tell the person to restart Claude Desktop, then pick the theme in `/themes`.
+
+## The theme file
+
+```json
+{
+  "id": "rainy-cafe",
+  "name": "Rainy Cafe",
+  "tagline": "Warm lamplight, rain on the glass, a slow evening",
+  "bg": "#2a211c", "text": "#f2e6d8", "accent": "#e0a458",
+  "font": "Georgia, serif",
+  "vars": {
+    "cds-radius": "10px", "cds-radius-composer": "18px", "cds-panel-radius": "14px",
+    "cds-shadow-md": "0 6px 22px rgba(224, 164, 88, .14)"
+  },
+  "status": { "idle": "☕", "tool": "☕ {tool}…", "error": "☔ {tool} failed", "done": "☕ done" },
+  "deco": "<circle cx=\"200\" cy=\"30\" r=\"20\" fill=\"#e0a458\" opacity=\".2\"/>"
+}
+```
+
+- `id`: lowercase letters, digits and dashes, 2 to 41 characters, starting with a letter.
+- `bg`, `text`, `accent`: `#rrggbb` only. The extension builds all of Claude's colors from these three. Keep the
+  text readable on the background: a contrast ratio of at least 7:1 for text, and 3:1 for the accent.
+- `font`: a font that is on the computer, as a CSS font family. Leave it out to keep Claude's font.
+- `vars`: Claude's other design tokens, without the leading `--`. The themes in `hooks/themes.ts` use the corner trio
+  (`cds-radius`, `cds-radius-composer`, `cds-panel-radius`), the shadows (`cds-shadow-sm`, `-md`, `-lg`) and
+  motion (`cds-dur-base`, `cds-ease-out`). No `;`, `{`, `}`, `<`, `>`, and no `url()` except `data:`.
+- `status`: the status line. `{tool}` is the tool's name. Keep each one short; one emoji plus a few words.
+- `deco`: SVG markup drawn over a 240×140 preview of a Claude window, for the theme's tile. Keep it light.
+- A live wallpaper also has `wallpaper` (its scene's name) and the `wall-*` vars that `live()` in `hooks/themes.ts`
+  sets: `wall-sky`, `wall-halo`, `wall-glass`, `wall-rim`, `wall-greet`.
+
+### The stylesheet
+
+The theme's stylesheet goes on Claude's logged-in page, so the extension refuses a stylesheet that loads anything:
+no `@import`, no `url()` except `data:`, no backslashes (write the character itself), no `image-set()`.
+Look at `themes/*.css` in the mod for the parts a theme can style:
+- `[data-cds=AssistantMessage]`, `[data-cds=UserMessage]`, `[data-cds=ChatComposer] > .bg-surface-3`, `.dframe-sidebar`.
+- `html[data-theme-event=tool]`, `=error` and `=done` for 1.2 seconds after each, and
+  `html[data-theme-state=thinking]` or `=waiting` while that lasts: the theme's reactions.
+- Respect `prefers-reduced-motion`: put every animation inside
+  `@media (prefers-reduced-motion: no-preference)`.
+
+## Live wallpaper scenes
+
+Read the scenes in `extension/theme.js` (`SCENES`) and the helpers above them before you write one. The person liked
+these rules for the built-in scenes:
+
+- **A clear idea and a few big motifs**, not a full picture. Two or three kinds of things, each easy to recognize.
+  A busy, tiled background was too much.
+- **Draw shapes by hand** with `sketch()` or a picture as rows of characters, with clear cues: eyes, fins, a forked
+  tail, a roof, a flame. Shapes made from ellipse math looked like blobs that nobody could recognize.
+- **Things move their bodies**, not only slide: tails beat, fins paddle, flames flicker, a few frames each
+  (`frame()`, or a `field` sprite worked out each frame). Check each draft in cell-by-cell motion as well as smooth.
+- **Keep the middle calm.** The chat is written over the middle of the window: put the big things at the sides and
+  corners, and let the chat backdrop handle the rest. Size big things by the window's width, so a small window is not
+  filled by them.
+- **Depth and light:** a darker drop `shadow`, a soft `glow` for lights, a `halo` of loose characters around a shape,
+  far things smaller and dimmer than near ones.
+- **A living background** in the scene's `cell` layer: twinkles, rising specks, rings, ripples. A scene without one
+  looked empty.
+- Keep the visible words in English. Draw nothing that copies a real brand or another person's art.
