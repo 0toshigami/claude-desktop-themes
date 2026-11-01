@@ -1,5 +1,7 @@
 .dframe-sidebar { background-color: var(--desktop-theme-backdrop) !important; }
 
+/* code blocks are drawn in a shadow root the theme's rules cannot reach; a rule on the host beats its :host rule,
+   and the variables pass inside */
 diffs-container {
   --diffs-light-bg: var(--cds-surface-2) !important;
   --diffs-dark-bg: var(--cds-surface-2) !important;

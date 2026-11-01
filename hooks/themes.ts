@@ -40,6 +40,7 @@ export const THEMES: Theme[] = [
       'cds-shadow-sm': '0 0 0 1px rgba(57, 232, 122, .25)',
       'cds-shadow-md': '0 0 0 1px rgba(57, 232, 122, .35), 0 0 14px rgba(57, 232, 122, .15)',
       'cds-shadow-lg': '0 0 0 1px rgba(57, 232, 122, .45), 0 0 24px rgba(57, 232, 122, .2)',
+      // (snappy, not 0s: a 0s transition never ends, and parts that wait for its end stay stuck)
       'cds-dur-base': '40ms', 'cds-dur-slow': '.1s',
     },
     status: { idle: '[SYS] online', tool: '[EXEC] {tool}', error: '[ERR] {tool} failed', done: '[SYS] done' },
