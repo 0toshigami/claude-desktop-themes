@@ -39,8 +39,7 @@ The mod works in the Claude Desktop app's Code tab.
 > **Unofficial.** This mod is built on the mods, extensions and other parts that Claude Desktop already has. It is
 > not a supported theming feature, so a future update of Claude Desktop can break it.
 >
-> **Windows only for now.** I tested it only on Windows. macOS and Linux are not done yet, and I do not have a Mac
-> or a Linux machine to test on. Help from the community is welcome: issues and pull requests for those platforms.
+> **Windows and macOS.** Linux is not done yet. Help from the community is welcome: issues and pull requests for it.
 
 This is a community mod. It is not made or endorsed by Anthropic. Claude, Claude Desktop, Claude Code and Clawd
 belong to Anthropic.
@@ -72,14 +71,19 @@ claude plugin install themes-for-claude --marketplace 0toshigami/claude-desktop-
    `/themes` works only inside a session. On the start page of **+ New**, typing `/themes` only starts a new
    session; type `/themes` again in that session to open the strip.
 3. The first time, the strip shows only an **Install extension** button. Press it. It copies the extension that
-   paints the themes into `%APPDATA%\Claude\extensions` and sets `REACT_PROFILE=1` for your Windows account, which
-   makes Claude Desktop load it.
-4. Quit Claude Desktop fully (also from the system tray) and open it again.
+   paints the themes into Claude Desktop's `extensions` folder and sets `REACT_PROFILE=1`, which makes Claude Desktop
+   load it:
+   - Windows: the folder is `%APPDATA%\Claude\extensions`, and the variable is set for your Windows account.
+   - macOS: the folder is `~/Library/Application Support/Claude/extensions`. The variable is set with
+     `launchctl setenv`, and a LaunchAgent (`~/Library/LaunchAgents/com.github.0toshigami.themes-for-claude.plist`)
+     sets it again at each login.
+4. Quit Claude Desktop fully (Windows: also from the system tray; macOS: Cmd+Q) and open it again.
 5. Type `/themes` again and press a theme's name to put it on. Press **Claude** to go back to Claude's own colors.
 
 ## Your own themes
 
-- **Simple themes** go into `%USERPROFILE%\.claude\themes-for-claude\` as `<id>.json`, with an optional `<id>.css`.
+- **Simple themes** go into `%USERPROFILE%\.claude\themes-for-claude\` (macOS: `~/.claude/themes-for-claude/`) as
+  `<id>.json`, with an optional `<id>.css`.
   They show in the strip's "Your themes" row, and an update of the mod does not remove them.
 - **Live wallpapers** go into the same folder: `<id>.json` with `"wallpaper": "<id>"`, and the scene as `<id>.js`.
   Pick it in `/themes` and it shows at once, with no restart.
@@ -89,14 +93,16 @@ claude plugin install themes-for-claude --marketplace 0toshigami/claude-desktop-
 Uninstalling the plugin removes only its commands. The extension in `%APPDATA%` stays, so remove it first:
 
 1. Type `/themes` and press **Remove extension**. It takes the mod's files and entries out of
-   `%APPDATA%\Claude\extensions\fmkadmapgofadopljbjfkapdkoienihi`. If no other mod uses that folder, it also removes
-   the folder and the `REACT_PROFILE` variable. If another mod uses the folder, it keeps both.
+   `fmkadmapgofadopljbjfkapdkoienihi` in Claude Desktop's `extensions` folder. If no other mod uses that folder, it
+   also removes the folder and the `REACT_PROFILE` variable (on macOS, the LaunchAgent too). If another mod uses the
+   folder, it keeps both.
 2. Restart Claude Desktop.
 3. Uninstall the plugin: in **Settings → Plugins**, or with `claude plugin uninstall themes-for-claude`.
 4. Optional: remove the marketplace too, which deletes its copy in `%USERPROFILE%\.claude\plugins\marketplaces`. Use
    **Settings → Plugins → Add → Manage marketplaces**, or `claude plugin marketplace remove claude-desktop-themes`.
 
-Your own themes in `%USERPROFILE%\.claude\themes-for-claude\` stay. Delete that folder if you do not want them.
+Your own themes in `%USERPROFILE%\.claude\themes-for-claude\` (macOS: `~/.claude/themes-for-claude/`) stay. Delete
+that folder if you do not want them.
 
 If you uninstalled the plugin first, remove the extension by hand in PowerShell. The folder can hold other mods
 too, so this deletes the folder and the variable only when the folder holds this mod alone:
@@ -106,6 +112,17 @@ $d = "$env:APPDATA\Claude\extensions\fmkadmapgofadopljbjfkapdkoienihi"
 if (((Get-Content "$d\manifest.json" -Raw | ConvertFrom-Json).content_scripts.js -join ',') -eq 'theme.js') {
   Remove-Item -Recurse $d; [Environment]::SetEnvironmentVariable('REACT_PROFILE', $null, 'User')
 } else { "Another mod shares $d. Delete only theme.js, theme.json and event.json, and their manifest entries." }
+```
+
+On macOS, in Terminal:
+
+```bash
+d="$HOME/Library/Application Support/Claude/extensions/fmkadmapgofadopljbjfkapdkoienihi"
+js() { plutil -extract "$1" raw -o - "$d/manifest.json" 2>/dev/null; }
+if [ "$(js content_scripts)/$(js content_scripts.0.js)/$(js content_scripts.0.js.0)" = "1/1/theme.js" ]; then
+  rm -rf "$d"; launchctl unsetenv REACT_PROFILE
+  rm -f ~/Library/LaunchAgents/com.github.0toshigami.themes-for-claude.plist
+else echo "Another mod shares $d. Delete only theme.js, theme.json and event.json, and their manifest entries."; fi
 ```
 
 ## Safety

@@ -5,10 +5,17 @@ import type { Theme } from '../types'
 import { assemble, sceneModule } from '../tools/assemble.mjs'
 import { THEMES, parseUserTheme, tile } from './themes'
 
-// Windows only (under %APPDATA%); 
-// on macOS it is ~/Library/Application Support/Claude/extensions/<id> (not tested),
-// with REACT_PROFILE set by launchctl setenv
-const SLOT = 'Claude\\extensions\\fmkadmapgofadopljbjfkapdkoienihi'
+// The React DevTools slot under Claude Desktop's userData: %APPDATA%\Claude on Windows,
+// ~/Library/Application Support/Claude on macOS. Claude Desktop loads it when REACT_PROFILE=1.
+const SLOT = ['Claude', 'extensions', 'fmkadmapgofadopljbjfkapdkoienihi']
+const MAC_SUPPORT = ['Library', 'Application Support']
+// macOS: what sets REACT_PROFILE=1 again at each login (launchctl setenv lasts until a restart)
+const AGENT = 'com.github.0toshigami.themes-for-claude'
+const QUIT = { windows: 'also from the tray', macos: 'Cmd+Q' } as const
+const BY_HAND = {
+  windows: 'Set the user environment variable REACT_PROFILE=1 by hand',
+  macos: 'Run launchctl setenv REACT_PROFILE 1 in Terminal',
+} as const
 const current = atom({ plugin: 'themes-for-claude', key: 'current' } as const, 'claude')
 // missing: no extension; restart: copied, but Claude Desktop has not loaded it yet
 type Setup = 'missing' | 'restart' | 'ready'
@@ -26,10 +33,36 @@ const veil = atom({ plugin: 'themes-for-claude', key: 'veil' } as const, LOOK.ve
 const VEILS = [0, .2, .4, .6, .8]
 const isStripOpen = atom({ plugin: 'themes-for-claude', key: 'isStripOpen' } as const, false)
 
-const slot = async ($: EngineInterface) => {
+// Paths join with the separator the base path already uses: Windows paths hold a backslash, macOS ones never do
+const join = (base: string, ...parts: string[]) => [base, ...parts].join(base.includes('\\') ? '\\' : '/')
+
+// home: where the person's own themes folder is (empty when unknown); undefined: neither Windows nor macOS with
+// Claude Desktop
+type Host = { os: 'windows' | 'macos'; home: string; userData: string }
+const hostOf = async ($: EngineInterface): Promise<Host | undefined> => {
   const appData = await $.env.get('APPDATA')
-  return appData && `${appData}\\${SLOT}`
+  if (appData) return { os: 'windows', home: (await $.env.get('USERPROFILE')) ?? '', userData: appData }
+  const home = await $.env.get('HOME')
+  const userData = home && join(home, ...MAC_SUPPORT)
+  return userData && (await $.fs.exists(join(userData, 'Claude'))) ? { os: 'macos', home: home!, userData } : undefined
 }
+
+const slot = async ($: EngineInterface) => {
+  const h = await hostOf($)
+  return h && join(h.userData, ...SLOT)
+}
+const agentFile = (h: Host) => join(h.home, 'Library', 'LaunchAgents', `${AGENT}.plist`)
+const AGENT_PLIST = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>${AGENT}</string>
+  <key>ProgramArguments</key>
+  <array><string>/bin/launchctl</string><string>setenv</string><string>REACT_PROFILE</string><string>1</string></array>
+  <key>RunAtLoad</key><true/>
+</dict>
+</plist>
+`
 
 // scene: the module path of the person's own scene, which the page imports
 export const fileOf = (t: Theme, css = '', look: Look = LOOK, scene?: string) =>
@@ -41,10 +74,10 @@ const statusOf = (t: Theme | undefined, kind: 'idle' | 'tool' | 'error' | 'done'
   t?.status?.[kind].split('{tool}').join(tool)
 
 let mine: Theme[] = []
-const MINE = '.claude\\themes-for-claude'
+const MINE = ['.claude', 'themes-for-claude']
 const mineDir = async ($: EngineInterface) => {
-  const home = await $.env.get('USERPROFILE')
-  return home && `${home}\\${MINE}`
+  const h = await hostOf($)
+  return h?.home ? join(h.home, ...MINE) : undefined
 }
 // when each of the person's scenes last changed: the page loads it again on a new time
 let sceneAt: Record<string, number> = {}
@@ -58,13 +91,13 @@ const loadMine = async ($: EngineInterface) => {
   for (const f of files) {
     if (f.kind !== 'file' || !f.name.endsWith('.json')) continue
     const id = f.name.slice(0, -5)
-    const css = at(`${id}.css`) ? String(await $.fs.read(`${dir}\\${id}.css`)) : undefined
-    const t = parseUserTheme(String(await $.fs.read(`${dir}\\${f.name}`)), css, at(`${id}.js`) !== undefined)
+    const css = at(`${id}.css`) ? String(await $.fs.read(join(dir, `${id}.css`))) : undefined
+    const t = parseUserTheme(String(await $.fs.read(join(dir, f.name))), css, at(`${id}.js`) !== undefined)
     if (t?.wallpaper && t.id !== id) t.wallpaper = undefined // (its scene is <id>.js by the file's name)
     const jpg = files.find(f => f.kind === 'file' && f.name === `${id}.jpg`)
     // (a missing, large or broken picture leaves the tile drawn from the theme's colors)
     const pic = t?.wallpaper && jpg && jpg.size < 16000
-      ? (await $.fs.read(`${dir}\\${id}.jpg`, { as: 'bytes' }).catch(() => undefined))?.base64 : undefined
+      ? (await $.fs.read(join(dir, `${id}.jpg`), { as: 'bytes' }).catch(() => undefined))?.base64 : undefined
     if (t && pic?.startsWith('/9j/')) t.thumb = `data:image/jpeg;base64,${pic}`
     if (t && !THEMES.some(b => b.id === t.id)) found.push(t)
   }
@@ -85,14 +118,14 @@ const signal = ($: EngineInterface, kind: '' | 'tool' | 'error' | 'done', tool =
   state = now
   void (async () => {
     const dir = await slot($)
-    if (dir) await $.fs.write(`${dir}\\event.json`, JSON.stringify({ n: ++n, kind, tool, state, at: Date.now() }))
+    if (dir) await $.fs.write(join(dir, 'event.json'), JSON.stringify({ n: ++n, kind, tool, state, at: Date.now() }))
   })().catch(() => {})
 }
 
 const check = async ($: EngineInterface) => {
   const dir = await slot($)
-  const manifest = dir ? await $.fs.read(`${dir}\\manifest.json`).catch(() => '') : ''
-  // setx reaches only processes started after it, so REACT_PROFILE shows here once Claude Desktop restarted
+  const manifest = dir ? await $.fs.read(join(dir, 'manifest.json')).catch(() => '') : ''
+  // setx and launchctl setenv reach only processes started after them, so REACT_PROFILE shows here once Claude Desktop restarted
   const loaded = (await $.env.get('REACT_PROFILE')) === '1'
   await update($, setup, was => !String(manifest).includes('"theme.js"') ? 'missing'
     : loaded && was !== 'restart' ? 'ready' : 'restart')
@@ -111,7 +144,7 @@ const withOurs = async ($: EngineInterface, dir: string) => {
   const fresh = JSON.parse(String(await $.fs.read(`${$.plugin.root}/extension/manifest.json`)))
   let manifest = fresh
   try {
-    manifest = JSON.parse(String(await $.fs.read(`${dir}\\manifest.json`)))
+    manifest = JSON.parse(String(await $.fs.read(join(dir, 'manifest.json'))))
   } catch {}
   if (manifest !== fresh) {
     const scripts: { js?: string[]; run_at?: string }[] = (manifest.content_scripts ??= [])
@@ -128,28 +161,46 @@ const withOurs = async ($: EngineInterface, dir: string) => {
 const rebuild = async ($: EngineInterface) => {
   const dir = await slot($)
   if (!dir || (await read($, setup)) === 'missing') return
-  const now = async (f: string) => String(await $.fs.read(`${dir}\\${f}`).catch(() => ''))
+  const now = async (f: string) => String(await $.fs.read(join(dir, f)).catch(() => ''))
   const js = await build($), manifest = await withOurs($, dir)
   if ((await now('theme.js')) === js && JSON.stringify(JSON.parse(await now('manifest.json'))) === JSON.stringify(JSON.parse(manifest))) return
-  await $.fs.write(`${dir}\\theme.js`, js)
-  await $.fs.write(`${dir}\\manifest.json`, manifest)
+  await $.fs.write(join(dir, 'theme.js'), js)
+  await $.fs.write(join(dir, 'manifest.json'), manifest)
   $.ui.toast('The extension is updated. Restart Claude Desktop to see the changes.')
 }
 
-const install = async ($: EngineInterface) => {
-  const dir = await slot($)
-  if (!dir) {
-    $.ui.toast('Only Windows is supported for now.')
+// REACT_PROFILE=1 for the apps started from now on, and after the next login
+const setProfile = async ($: EngineInterface, h: Host) => {
+  if (h.os === 'windows') return (await $.process.run(['setx', 'REACT_PROFILE', '1'])).exitCode
+  await $.fs.write(agentFile(h), AGENT_PLIST)
+  return (await $.process.run(['launchctl', 'setenv', 'REACT_PROFILE', '1'])).exitCode
+}
+const clearProfile = async ($: EngineInterface, h: Host) => {
+  if (h.os === 'windows') {
+    // (SetEnvironmentVariable, not reg delete: it tells Windows, so apps started later see the change)
+    await $.process.run(['powershell', '-NoProfile', '-Command',
+      "[Environment]::SetEnvironmentVariable('REACT_PROFILE', $null, 'User')"])
     return
   }
-  await $.fs.write(`${dir}\\theme.js`, await build($))
-  if (!(await $.fs.exists(`${dir}\\theme.json`))) await $.fs.write(`${dir}\\theme.json`, '{}')
-  if (!(await $.fs.exists(`${dir}\\event.json`))) await $.fs.write(`${dir}\\event.json`, '{}')
-  await $.fs.write(`${dir}\\manifest.json`, await withOurs($, dir))
-  const { exitCode } = await $.process.run(['setx', 'REACT_PROFILE', '1'])
+  await $.process.run(['launchctl', 'unsetenv', 'REACT_PROFILE'])
+  await $.process.run(['rm', '-f', agentFile(h)])
+}
+
+const install = async ($: EngineInterface) => {
+  const h = await hostOf($)
+  const dir = await slot($)
+  if (!h || !dir) {
+    $.ui.toast('Only Windows and macOS are supported for now.')
+    return
+  }
+  await $.fs.write(join(dir, 'theme.js'), await build($))
+  if (!(await $.fs.exists(join(dir, 'theme.json')))) await $.fs.write(join(dir, 'theme.json'), '{}')
+  if (!(await $.fs.exists(join(dir, 'event.json')))) await $.fs.write(join(dir, 'event.json'), '{}')
+  await $.fs.write(join(dir, 'manifest.json'), await withOurs($, dir))
+  const exitCode = await setProfile($, h)
   await update($, setup, () => 'restart')
   $.ui.toast(exitCode === 0
-    ? 'Installed. Restart Claude Desktop to use the themes.'
+    ? `Installed. Quit Claude Desktop fully (${QUIT[h.os]}) and open it again to use the themes.`
     : 'The extension is copied, but REACT_PROFILE=1 could not be set.')
 }
 
@@ -168,23 +219,29 @@ export const withoutOurs = (m: Manifest): Manifest | undefined => {
 }
 
 const remove = async ($: EngineInterface) => {
+  const h = await hostOf($)
   const dir = await slot($)
-  if (!dir) return
+  if (!h || !dir) return
   let manifest: Manifest | undefined
   try {
-    manifest = JSON.parse(String(await $.fs.read(`${dir}\\manifest.json`)))
+    manifest = JSON.parse(String(await $.fs.read(join(dir, 'manifest.json'))))
   } catch {}
   // an unreadable manifest may still belong to another mod: then delete only our files, never the folder
   const rest = manifest && withoutOurs(manifest)
   let exitCode: number | null
   if (!manifest || rest) {
-    if (rest) await $.fs.write(`${dir}\\manifest.json`, JSON.stringify(rest, null, 2))
-    ;({ exitCode } = await $.process.run(['cmd', '/c', 'del', '/q', ...['theme.js', ...OURS].map(f => `${dir}\\${f.replace('/', '\\')}`)]))
+    if (rest) await $.fs.write(join(dir, 'manifest.json'), JSON.stringify(rest, null, 2))
+    const files = ['theme.js', ...OURS].map(f => join(dir, ...f.split('/')))
+    // (del expands the scenes/*.js pattern itself; rm takes the scene files by name, as the folder holds no other)
+    const scenes = join(dir, 'scenes')
+    const ownScenes = h.os === 'macos' && (await $.fs.exists(scenes))
+      ? (await $.fs.list(scenes)).filter(f => f.kind === 'file' && f.name.endsWith('.js')).map(f => join(scenes, f.name)) : []
+    ;({ exitCode } = await $.process.run(h.os === 'windows'
+      ? ['cmd', '/c', 'del', '/q', ...files]
+      : ['rm', '-f', '--', ...files.filter(f => !f.endsWith('*.js')), ...ownScenes]))
   } else {
-    // (SetEnvironmentVariable, not reg delete: it tells Windows, so apps started later see the change)
-    await $.process.run(['powershell', '-NoProfile', '-Command',
-      "[Environment]::SetEnvironmentVariable('REACT_PROFILE', $null, 'User')"])
-    ;({ exitCode } = await $.process.run(['cmd', '/c', 'rmdir', '/s', '/q', dir]))
+    await clearProfile($, h)
+    ;({ exitCode } = await $.process.run(h.os === 'windows' ? ['cmd', '/c', 'rmdir', '/s', '/q', dir] : ['rm', '-rf', dir]))
   }
   await update($, setup, () => 'missing')
   await update($, current, () => 'claude')
@@ -201,8 +258,8 @@ const pick = async ($: EngineInterface, t: Theme) => {
   const wall = t.wallpaper ? await css('_wallpaper') : ''
   // the person's own scene: copied in as a module beside theme.js, a new ?v= each time the file changes
   const own = t.wallpaper && Object.hasOwn(sceneAt, t.id) ? await mineDir($) : undefined
-  if (own) await $.fs.write(`${dir}\\scenes\\${t.id}.js`, sceneModule(String(await $.fs.read(`${own}\\${t.id}.js`))))
-  await $.fs.write(`${dir}\\theme.json`, fileOf(t, `${await css('_base')}\n${wall}\n${t.css ?? (await css(t.id))}`,
+  if (own) await $.fs.write(join(dir, 'scenes', `${t.id}.js`), sceneModule(String(await $.fs.read(join(own, `${t.id}.js`)))))
+  await $.fs.write(join(dir, 'theme.json'), fileOf(t, `${await css('_base')}\n${wall}\n${t.css ?? (await css(t.id))}`,
     { motion: await read($, motion), speed: await read($, speed), cell: await read($, cell), veil: await read($, veil) },
     own ? `scenes/${t.id}.js?v=${sceneAt[t.id]}` : undefined))
   await update($, current, () => t.id)
@@ -227,7 +284,7 @@ export const register: Register = on => {
     try {
       await loadMine($).catch(() => {})
       const dir = await slot($)
-      const saved = dir ? JSON.parse(String(await $.fs.read(`${dir}\\theme.json`))) : {}
+      const saved = dir ? JSON.parse(String(await $.fs.read(join(dir, 'theme.json')))) : {}
       await update($, current, () => (typeof saved.id === 'string' ? saved.id : 'claude'))
       await update($, motion, () => (Object.hasOwn(MOTIONS, saved.motion) ? saved.motion : LOOK.motion))
       await update($, speed, () => (SPEEDS.includes(saved.speed) ? saved.speed : LOOK.speed))
@@ -257,6 +314,7 @@ export const register: Register = on => {
     const pace = await read($, speed)
     const size = await read($, cell)
     const shade = await read($, veil)
+    const os = (await hostOf($))?.os ?? 'windows'
     const worn = allThemes().find(t => t.id === now) ?? THEMES[0]!
     const row = (title: string, themes: Theme[]) => (
       <Box key={`row-${title}`} flexDirection="column" gap="xs">
@@ -295,8 +353,8 @@ export const register: Register = on => {
         ) : stage === 'restart' ? (
           <Box key="notice" flexDirection="column" gap="xs" padding={1} borderStyle="round" borderColor="success">
             <Text color="success" weight="semibold">Installed. Now restart Claude Desktop</Text>
-            <Text>Quit Claude Desktop fully (also from the tray), open it again, then type /themes.</Text>
-            <Text dimColor>Still here after a restart? Set the user environment variable REACT_PROFILE=1 by hand, then restart again.</Text>
+            <Text>{`Quit Claude Desktop fully (${QUIT[os]}), open it again, then type /themes.`}</Text>
+            <Text dimColor>{`Still here after a restart? ${BY_HAND[os]}, then restart again.`}</Text>
           </Box>
         ) : worn.wallpaper && (
           <Box flexDirection="row" gap={1} alignItems="center" flexWrap="wrap">
