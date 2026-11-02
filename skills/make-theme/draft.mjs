@@ -42,6 +42,7 @@ writeFileSync(need('out'), `<!doctype html>
   .dframe-sidebar p { margin: 0 0 10px; color: var(--cds-text-secondary); }
   .main { position: fixed; left: 210px; right: 0; top: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; }
   .chat { width: min(640px, 86%); padding-top: 40px; display: flex; flex-direction: column; gap: 18px; }
+  .start { position: relative; height: 90px; display: flex; align-items: flex-start; }
   .you { align-self: flex-end; max-width: 70%; padding: 10px 14px; background: var(--cds-surface-2);
     border-radius: var(--cds-radius, 10px); box-shadow: var(--cds-shadow-sm, none); }
   [data-cds=AssistantMessage] p { margin: 0 0 8px; }
@@ -56,6 +57,7 @@ writeFileSync(need('out'), `<!doctype html>
 <div class="dframe-sidebar"><b>Claude</b><p>New session</p><p>Search</p><p>Customize</p><p style="margin-top:24px">${esc(theme.name)}</p></div>
 <div class="main">
   <div class="chat epitaxy-transcript-typography">
+    <div class="start" data-testid="start-card-clawd"><svg width="56" height="44" viewBox="0 0 14 11"><path fill="#d97757" d="M2 0h10v2h2v3h-2v4h-1v2h-1V9H9v2H8V9H6v2H5V9H4v2H3V9H2V5H0V2h2z"/><path fill="#000" d="M4 3h1v2H4zm5 0h1v2H9z"/></svg></div>
     <div class="you" data-cds="UserMessage">Can you make my chat feel like ${esc(theme.name)}?</div>
     <div data-cds="AssistantMessage">
       <p>Sure. This is how <a href="#">${esc(theme.name)}</a> looks: ${esc(theme.tagline)}.</p>
