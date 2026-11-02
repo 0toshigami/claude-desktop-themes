@@ -124,6 +124,9 @@ The theme's stylesheet goes on Claude's logged-in page, so the extension refuses
 no `@import`, no `url()` except `data:`, no backslashes (write the character itself), no `image-set()`.
 Look at `themes/*.css` in the mod for the parts a theme can style:
 - `[data-cds=AssistantMessage]`, `[data-cds=UserMessage]`, `[data-cds=ChatComposer] > .bg-surface-3`, `.dframe-sidebar`.
+- The start page: `[data-testid=start-card-clawd]`. Every built-in theme decorates it: tint or animate the Clawd
+  (`> *`), draw a motif beside him (`::before`), and add a short greeting line (`::after`). Give a simple theme a
+  stylesheet with this, even when it styles nothing else. See the end of `themes/sakura.css`.
 - `html[data-theme-event=tool]`, `=error` and `=done` for 1.2 seconds after each, and
   `html[data-theme-state=thinking]` or `=waiting` while that lasts: the theme's reactions.
 - Respect `prefers-reduced-motion`: put every animation inside

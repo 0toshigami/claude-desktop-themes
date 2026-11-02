@@ -1,6 +1,6 @@
 {
   "name": "themes-for-claude",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Themes for Claude Desktop, live ASCII wallpapers among them, picked from a strip above the prompt with /themes; the make-theme skill makes your own",
   "author": { "name": "0toshigami" },
   "types": "./types/index.d.ts"
