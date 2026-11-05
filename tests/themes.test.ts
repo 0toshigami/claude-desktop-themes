@@ -90,7 +90,6 @@ test('on macOS the strip installs into Application Support and sets REACT_PROFIL
   const posix = (p: string) => p.replace(/^[A-Za-z]:/, '').replaceAll('\\', '/')
   on('fs.exists', ($, e) => ({ value: posix(e.path) === `${support}/Claude` || disk.has(posix(e.path)) }))
   on('fs.list', () => ({ value: [] }))
-  on('ui.toast', () => ({ value: undefined }))
   on('fs.write', ($, e) => { disk.set(posix(e.path), e.text); return { value: undefined } })
   on('fs.read', ($, e) => {
     const path = posix(e.path)
