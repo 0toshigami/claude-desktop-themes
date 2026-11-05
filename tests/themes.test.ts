@@ -86,14 +86,18 @@ test('on macOS the strip installs into Application Support and sets REACT_PROFIL
   const disk = new Map<string, string>()
   const runs: string[][] = []
   on('env.get', ($, e) => ({ value: e.name === 'HOME' ? home : undefined }))
-  on('fs.exists', ($, e) => ({ value: e.path === `${support}/Claude` || disk.has(e.path) }))
+  // (run on Windows, the engine hands these hooks /Users/p as E:\Users\p)
+  const posix = (p: string) => p.replace(/^[A-Za-z]:/, '').replaceAll('\\', '/')
+  on('fs.exists', ($, e) => ({ value: posix(e.path) === `${support}/Claude` || disk.has(posix(e.path)) }))
   on('fs.list', () => ({ value: [] }))
-  on('fs.write', ($, e) => { disk.set(e.path, e.text); return { value: undefined } })
+  on('ui.toast', () => ({ value: undefined }))
+  on('fs.write', ($, e) => { disk.set(posix(e.path), e.text); return { value: undefined } })
   on('fs.read', ($, e) => {
-    if (disk.has(e.path)) return { value: disk.get(e.path)! }
-    if (e.path.endsWith('/extension/manifest.json'))
+    const path = posix(e.path)
+    if (disk.has(path)) return { value: disk.get(path)! }
+    if (path.endsWith('/extension/manifest.json'))
       return { value: '{"content_scripts":[{"matches":["<all_urls>"],"js":["theme.js"]}],"web_accessible_resources":[{"resources":["theme.json"]}]}' }
-    if (e.path.includes('/extension/src/')) return { value: '' }
+    if (path.includes('/extension/src/')) return { value: '' }
     throw new Error('ENOENT')
   })
   on('process.run', ($, e) => {
