@@ -76,3 +76,46 @@ test('the strip above the prompt shows only once opened, a button per theme, and
   await after.unmount()
 })
 
+
+test('on macOS the strip installs into Application Support and sets REACT_PROFILE with launchctl, and removes both', async ($, on) => {
+  on('ui.render', { component: 'AbovePrompt' }, ($, e) => $.ui.resolve(e).Box({}))
+  const home = '/Users/p', support = `${home}/Library/Application Support`
+  const slot = `${support}/Claude/extensions/fmkadmapgofadopljbjfkapdkoienihi`
+  const agent = `${home}/Library/LaunchAgents/com.github.0toshigami.themes-for-claude.plist`
+  // a small disk: what the mod writes, and its own extension's files as a stand-in
+  const disk = new Map<string, string>()
+  const runs: string[][] = []
+  on('env.get', ($, e) => ({ value: e.name === 'HOME' ? home : undefined }))
+  on('fs.exists', ($, e) => ({ value: e.path === `${support}/Claude` || disk.has(e.path) }))
+  on('fs.list', () => ({ value: [] }))
+  on('fs.write', ($, e) => { disk.set(e.path, e.text); return { value: undefined } })
+  on('fs.read', ($, e) => {
+    if (disk.has(e.path)) return { value: disk.get(e.path)! }
+    if (e.path.endsWith('/extension/manifest.json'))
+      return { value: '{"content_scripts":[{"matches":["<all_urls>"],"js":["theme.js"]}],"web_accessible_resources":[{"resources":["theme.json"]}]}' }
+    if (e.path.includes('/extension/src/')) return { value: '' }
+    throw new Error('ENOENT')
+  })
+  on('process.run', ($, e) => {
+    runs.push([...e.argv])
+    return { value: { exitCode: 0, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
+  })
+  const props = { hasSurvey: false, isWorking: false, maxRows: 40, columns: 100 }
+
+  await $.command.run({ command: 'themes' })
+  const bare = await $.ui.mount({ plugin: 'themes-for-claude', surface: 'desktop', component: 'AbovePrompt', props })
+  await bare.press({ key: 'install' })
+  await bare.unmount()
+  expect(disk.has(`${slot}/theme.js`)).toBe(true)
+  expect(disk.get(`${slot}/manifest.json`)).toMatch(/"theme\.js"/)
+  expect(disk.get(agent)).toMatch(/<string>REACT_PROFILE<\/string><string>1<\/string>/)
+  expect(runs).toContainEqual(['launchctl', 'setenv', 'REACT_PROFILE', '1'])
+
+  const ui = await $.ui.mount({ plugin: 'themes-for-claude', surface: 'desktop', component: 'AbovePrompt', props })
+  expect((await ui.find({ type: 'Text', text: /Cmd\+Q/ }))?.text).toMatch(/Quit Claude Desktop fully \(Cmd\+Q\)/)
+  await ui.press({ key: 'remove' })
+  await ui.unmount()
+  expect(runs).toContainEqual(['launchctl', 'unsetenv', 'REACT_PROFILE'])
+  expect(runs).toContainEqual(['rm', '-f', agent])
+  expect(runs).toContainEqual(['rm', '-rf', slot])
+})

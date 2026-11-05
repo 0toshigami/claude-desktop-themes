@@ -18,7 +18,7 @@ const boot = `<script>window.chrome = { runtime: { getURL: n => n } }; const T =
 window.fetch = async n => ({ text: async () => (n === 'theme.json' ? JSON.stringify(T) : '{}') });</script>
 <script>${js.replace('time: 0, last: 0', `time: ${start}, last: 0`)}</script>`
 
-// --bare: the wallpaper alone, as the strip's tile shows it (tools/thumbs/capture.ps1 takes its picture)
+// --bare: the wallpaper alone, as the strip's tile shows it (tools/thumbs/capture.ps1, or capture.sh on macOS, takes its picture)
 if (process.argv.includes('--bare')) {
   writeFileSync(need('out'), `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><style>html, body { margin: 0; height: 100%; overflow: hidden; }</style></head><body>

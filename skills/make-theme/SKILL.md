@@ -57,7 +57,8 @@ draft.
 ### A simple theme
 
 1. Write `<id>.json`, and `<id>.css` if the theme has a stylesheet, to the person's themes folder:
-   `%USERPROFILE%\.claude\themes-for-claude\` on Windows. Create the folder if it is not there.
+   `%USERPROFILE%\.claude\themes-for-claude\` on Windows, `~/.claude/themes-for-claude/` on macOS. Create the folder
+   if it is not there.
 2. Tell the person to run `/themes`. The strip reads the folder each time it opens, and the theme shows in the
    "Your themes" row. A press on its name puts it on, with no restart.
 
@@ -82,6 +83,10 @@ Do not change the mod's own files: the theme belongs to the person, not to the m
    ```bash
    node "<this skill's folder>/draft.mjs" --theme "<themes folder>/<id>.json" --scene "<themes folder>/<id>.js" --start 20 --bare --out draft/<id>-tile.html
    powershell -NoProfile -File "<the mod's root>/tools/thumbs/capture.ps1" -Page draft/<id>-tile.html -Out "<themes folder>/<id>.jpg"
+   ```
+   On macOS, take the picture with `capture.sh` instead of the `powershell` line:
+   ```bash
+   sh "<the mod's root>/tools/thumbs/capture.sh" -Page draft/<id>-tile.html -Out "<themes folder>/<id>.jpg"
    ```
    Read the picture to check it shows the scene's main motifs. If the capture fails (no browser found, `no shot`,
    or a picture that does not show the scene), delete any `<id>.jpg` and go on: the tile then falls back to the
