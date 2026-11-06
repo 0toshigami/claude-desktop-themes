@@ -14,12 +14,21 @@ export const build = (extra = []) => assemble(read(new URL('core.js', src)),
   [...readdirSync(new URL('scenes/', src)).filter(f => f.endsWith('.js')).sort().map(f => read(new URL(`scenes/${f}`, src))), ...extra.map(read)],
   read(new URL('engine.js', src)))
 
+const movedTo = () => {
+  const classic = join(process.env.APPDATA ?? '', 'Claude')
+  if (!process.env.APPDATA || !process.env.LOCALAPPDATA || !existsSync(classic)) return undefined
+  const name = readdirSync(classic).find(n => n.startsWith('.user-data-left.'))?.slice('.user-data-left.'.length)
+  const moved = name && /^[\w.-]+$/.test(name) ? join(process.env.LOCALAPPDATA, 'Claude-Data', name) : undefined
+  return moved && existsSync(moved) ? moved : undefined
+}
+
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  // Claude Desktop's userData, as the mod's install finds it (Windows and macOS)
-  const userData = process.platform === 'win32' ? process.env.APPDATA
-    : process.platform === 'darwin' ? join(homedir(), 'Library', 'Application Support') : undefined
-  if (!userData) throw new Error('only Windows and macOS are supported')
-  const slot = join(userData, 'Claude', 'extensions', 'fmkadmapgofadopljbjfkapdkoienihi')
+  // Claude Desktop's data folder, as the mod's install finds it (Windows and macOS); on Windows the app may have
+  // moved it to %LOCALAPPDATA%\Claude-Data\<name>, leaving .user-data-left.<name> in %APPDATA%\Claude
+  const claude = process.platform === 'win32' ? movedTo() ?? join(process.env.APPDATA ?? '', 'Claude')
+    : process.platform === 'darwin' ? join(homedir(), 'Library', 'Application Support', 'Claude') : undefined
+  if (!claude) throw new Error('only Windows and macOS are supported')
+  const slot = join(claude, 'extensions', 'fmkadmapgofadopljbjfkapdkoienihi')
   if (!existsSync(join(slot, 'theme.js'))) throw new Error('not installed: press "Install extension" in /themes first')
   writeFileSync(join(slot, 'theme.js'), build())
   console.log(`built into ${join(slot, 'theme.js')}; restart Claude Desktop to see it`)
