@@ -1,4 +1,7 @@
-.dframe-sidebar { background-color: var(--desktop-theme-backdrop) !important; }
+.dframe-root:not([data-collapsed]) .dframe-sidebar { background-color: var(--desktop-theme-backdrop) !important; }
+/* the sidebar shown on hover while collapsed: its body, and the band behind the buttons above it */
+.dframe-root[data-collapsed] .dframe-sidebar-body { --df-web-sidebar-bg: var(--desktop-theme-backdrop) !important; }
+.dframe-chrome-peek-band { background-color: var(--desktop-theme-backdrop) !important; }
 
 /* code blocks are drawn in a shadow root the theme's rules cannot reach; a rule on the host beats its :host rule,
    and the variables pass inside */
