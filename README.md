@@ -32,8 +32,6 @@ want, drafts it as an Artifact for you to approve, and then builds it.
 
 https://github.com/user-attachments/assets/128fd8a4-7061-43d6-8a54-7e9948964825
 
-Made one you like? [Share it in the Gallery](https://github.com/0toshigami/claude-desktop-themes/discussions/categories/gallery).
-
 ## Before you install
 
 The mod works in the Claude Desktop app's Code tab.
