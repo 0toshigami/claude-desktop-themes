@@ -2,7 +2,7 @@
 // - theme.json, each second: { id, bg, text, accent, font?, vars?, wallpaper?, scene?, motion?, speed?, cell?, veil?, css? }
 // - event.json, 3 times a second: { n, kind, tool, state, at }. A new n sets data-theme-event (tool, error, done) and
 //   data-theme-tool on <html> for 1.2 s, and data-theme-state (thinking, waiting) until the next one.
-// <html data-theme="<id>"> while a theme is on.
+// <html data-desktop-theme="<id>"> while a theme is on. (Not data-theme: the app sets <html data-theme> itself.)
 const read = name => fetch(chrome.runtime.getURL(name), { cache: 'no-store' }).then(r => r.text());
 const root = document.documentElement;
 

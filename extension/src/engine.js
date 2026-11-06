@@ -151,8 +151,8 @@ const paint = t => {
   syncMode();
   if (css && !safe(css)) console.warn('themes-for-claude: the theme\'s css was refused (it loads from outside the page)');
   const text = (vars.length ? `*{${vars.map(([k, v]) => `--${k}:${v} !important`).join(';')}}\n` : '') + (safe(css) ? css : '');
-  if (typeof t.id === 'string' && /^[a-z0-9-]{1,40}$/.test(t.id) && text) root.dataset.theme = t.id;
-  else delete root.dataset.theme;
+  if (typeof t.id === 'string' && /^[a-z0-9-]{1,40}$/.test(t.id) && text) root.dataset.desktopTheme = t.id; // (not data-theme: Claude Desktop sets its own there)
+  else delete root.dataset.desktopTheme;
   if (!text) return;
   const style = document.createElement('style');
   style.id = 'desktop-theme';
