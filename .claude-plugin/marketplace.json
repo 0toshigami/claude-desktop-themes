@@ -1,6 +1,14 @@
 {
   "name": "claude-desktop-themes",
-  "owner": { "name": "0toshigami" },
+  "owner": { "name": "0toshigami", "url": "https://github.com/0toshigami/claude-desktop-themes" },
   "description": "Themes and live ASCII wallpapers for Claude Desktop",
-  "plugins": [{ "name": "themes-for-claude", "source": "./" }]
+  "plugins": [
+    {
+      "name": "themes-for-claude",
+      "source": "./",
+      "description": "Themes and live ASCII wallpapers for Claude Desktop, picked with /themes",
+      "category": "appearance",
+      "tags": ["themes", "wallpaper", "ascii", "claude-desktop"]
+    }
+  ]
 }
