@@ -5,9 +5,9 @@ import type { Theme } from '../types'
 import { assemble, sceneModule } from '../tools/assemble.mjs'
 import { THEMES, parseUserTheme, tile } from './themes'
 
-// The React DevTools slot under Claude Desktop's userData: %APPDATA%\Claude on Windows,
-// ~/Library/Application Support/Claude on macOS. Claude Desktop loads it when REACT_PROFILE=1.
-const SLOT = ['Claude', 'extensions', 'fmkadmapgofadopljbjfkapdkoienihi']
+// The React DevTools slot in Claude Desktop's data folder: %APPDATA%\Claude on Windows (unless the app moved it, see
+// movedTo), ~/Library/Application Support/Claude on macOS. Claude Desktop loads it when REACT_PROFILE=1.
+const SLOT = ['extensions', 'fmkadmapgofadopljbjfkapdkoienihi']
 const MAC_SUPPORT = ['Library', 'Application Support']
 // macOS: what sets REACT_PROFILE=1 again at each login (launchctl setenv lasts until a restart)
 const AGENT = 'com.github.0toshigami.themes-for-claude'
@@ -38,18 +38,35 @@ const join = (base: string, ...parts: string[]) => [base, ...parts].join(base.in
 
 // home: where the person's own themes folder is (empty when unknown); undefined: neither Windows nor macOS with
 // Claude Desktop
-type Host = { os: 'windows' | 'macos'; home: string; userData: string }
+// Claude Desktop, the folder its extensions folder is in
+type Host = { os: 'windows' | 'macos'; home: string; claude: string }
 const hostOf = async ($: EngineInterface): Promise<Host | undefined> => {
   const appData = await $.env.get('APPDATA')
-  if (appData) return { os: 'windows', home: (await $.env.get('USERPROFILE')) ?? '', userData: appData }
+  if (appData) {
+    const home = (await $.env.get('USERPROFILE')) ?? ''
+    return { os: 'windows', home, claude: (await movedTo($, appData)) ?? join(appData, 'Claude') }
+  }
   const home = await $.env.get('HOME')
-  const userData = home && join(home, ...MAC_SUPPORT)
-  return userData && (await $.fs.exists(join(userData, 'Claude'))) ? { os: 'macos', home: home!, userData } : undefined
+  const claude = home && join(home, ...MAC_SUPPORT, 'Claude')
+  return claude && (await $.fs.exists(claude)) ? { os: 'macos', home: home!, claude } : undefined
+}
+
+// Some Windows installs (the Microsoft Store one among them) move Claude Desktop's data to
+// %LOCALAPPDATA%\Claude-Data\<name> and leave only a marker, .user-data-left.<name>, in %APPDATA%\Claude. The app
+// then loads extensions from the moved folder alone, so the slot has to go there.
+const MOVED = '.user-data-left.'
+const movedTo = async ($: EngineInterface, appData: string) => {
+  const local = await $.env.get('LOCALAPPDATA')
+  const classic = join(appData, 'Claude')
+  if (!local || !(await $.fs.exists(classic))) return undefined
+  const name = (await $.fs.list(classic)).map(e => e.name).find(n => n.startsWith(MOVED))?.slice(MOVED.length)
+  const moved = name && /^[\w.-]+$/.test(name) ? join(local, 'Claude-Data', name) : undefined
+  return moved && (await $.fs.exists(moved)) ? moved : undefined
 }
 
 const slot = async ($: EngineInterface) => {
   const h = await hostOf($)
-  return h && join(h.userData, ...SLOT)
+  return h && join(h.claude, ...SLOT)
 }
 const agentFile = (h: Host) => join(h.home, 'Library', 'LaunchAgents', `${AGENT}.plist`)
 const AGENT_PLIST = `<?xml version="1.0" encoding="UTF-8"?>

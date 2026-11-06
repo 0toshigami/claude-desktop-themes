@@ -77,6 +77,36 @@ test('the strip above the prompt shows only once opened, a button per theme, and
 })
 
 
+test('on Windows, when Claude Desktop moved its data to Claude-Data, the extension goes into the moved folder', async ($, on) => {
+  on('ui.render', { component: 'AbovePrompt' }, ($, e) => $.ui.resolve(e).Box({}))
+  const classic = 'C:\\AppData\\Claude', moved = 'C:\\Local\\Claude-Data\\claude_abc123'
+  const slot = `${moved}\\extensions\\fmkadmapgofadopljbjfkapdkoienihi`
+  const disk = new Map<string, string>()
+  on('env.get', ($, e) => ({ value: ({ APPDATA: 'C:\\AppData', LOCALAPPDATA: 'C:\\Local', USERPROFILE: 'C:\\Users\\p' } as Record<string, string>)[e.name] }))
+  on('fs.exists', ($, e) => ({ value: e.path === classic || e.path === moved || disk.has(e.path) }))
+  on('fs.list', ($, e) => ({
+    value: e.path === classic ? [{ name: '.user-data-left.claude_abc123', kind: 'file', size: 0, mtimeMs: 0, isLink: false }] : [],
+  }))
+  on('fs.write', ($, e) => { disk.set(e.path, e.text); return { value: undefined } })
+  on('fs.read', ($, e) => {
+    if (disk.has(e.path)) return { value: disk.get(e.path)! }
+    if (e.path.replaceAll('\\', '/').endsWith('/extension/manifest.json'))
+      return { value: '{"content_scripts":[{"matches":["<all_urls>"],"js":["theme.js"]}],"web_accessible_resources":[{"resources":["theme.json"]}]}' }
+    if (e.path.replaceAll('\\', '/').includes('/extension/src/')) return { value: '' }
+    throw new Error('ENOENT')
+  })
+  on('process.run', () => ({ value: { exitCode: 0, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }))
+  const props = { hasSurvey: false, isWorking: false, maxRows: 40, columns: 100 }
+
+  await $.command.run({ command: 'themes' })
+  const bare = await $.ui.mount({ plugin: 'themes-for-claude', surface: 'desktop', component: 'AbovePrompt', props })
+  await bare.press({ key: 'install' })
+  await bare.unmount()
+  expect(disk.has(`${slot}\\theme.js`)).toBe(true)
+  expect(disk.get(`${slot}\\manifest.json`)).toMatch(/"theme\.js"/)
+  expect([...disk.keys()].some(p => p.startsWith(`${classic}\\extensions`))).toBe(false) // never the folder the app no longer reads
+})
+
 test('on macOS the strip installs into Application Support and sets REACT_PROFILE with launchctl, and removes both', async ($, on) => {
   on('ui.render', { component: 'AbovePrompt' }, ($, e) => $.ui.resolve(e).Box({}))
   const home = '/Users/p', support = `${home}/Library/Application Support`
