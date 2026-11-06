@@ -17,6 +17,11 @@ const hsl = ([r, g, b]) => {
   return `${Math.round(h * 60)} ${(s * 100).toFixed(1)}% ${(l * 100).toFixed(1)}%`;
 };
 const luma = ([r, g, b]) => .2126 * r + .7152 * g + .0722 * b;
+// WCAG contrast of two colours, and the text colour mixed toward the background by up to k, but kept at 4.5:1 or
+// more against it (AA for normal text): secondary and muted text stay readable whatever the palette
+const wcagLum = c => luma(c.map(v => (v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4)));
+const wcag = (a, b) => { const x = wcagLum(a), y = wcagLum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); };
+const readable = (tx, bg, k) => { for (let f = k; f > 0; f -= .05) if (wcag(mix(tx, bg, f), bg) >= 4.5) return hex(mix(tx, bg, f)); return hex(tx); };
 
 // The page is the person's logged-in Claude: a theme's CSS loads nothing from outside. Backslashes are refused
 // because a CSS escape can spell url( past these checks.
@@ -29,7 +34,7 @@ const varsOf = t => {
   if (ok(t.bg) && ok(t.text) && ok(t.accent)) {
     const bg = rgb(t.bg), tx = rgb(t.text), ac = rgb(t.accent);
     const at = (a, b, k) => hex(mix(a, b, k));
-    const second = at(tx, bg, .35), muted = at(tx, bg, .55), hover = at(ac, tx, .15), tint = at(bg, ac, .15);
+    const second = readable(tx, bg, .35), muted = readable(tx, bg, .55), hover = at(ac, tx, .15), tint = at(bg, ac, .15);
     const on = luma(ac) > .55 ? '#000000' : '#ffffff';
     const cds = {
       'page-bg': t.bg, 'surface-0': t.bg, 'surface-1': at(bg, tx, .03), 'surface-2': at(bg, tx, .06), 'surface-3': at(bg, tx, .09),
