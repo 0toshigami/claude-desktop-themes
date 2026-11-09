@@ -76,6 +76,42 @@ test('the strip above the prompt shows only once opened, a button per theme, and
   await after.unmount()
 })
 
+test('on Windows the strip installs into the Claude-Data folder in use, else into %APPDATA%\\Claude', async ($, on) => {
+  on('ui.render', { component: 'AbovePrompt' }, ($, e) => $.ui.resolve(e).Box({}))
+  const id = 'extensions\\fmkadmapgofadopljbjfkapdkoienihi'
+  const data = 'C:\\Local\\Claude-Data'
+  let inUse = true // whether Claude-Data\claude_x holds Local State
+  const disk = new Map<string, string>()
+  on('env.get', ($, e) => ({ value: ({ APPDATA: 'C:\\Roaming', LOCALAPPDATA: 'C:\\Local' } as Record<string, string>)[e.name] }))
+  on('fs.exists', ($, e) => ({ value: e.path === data || (inUse && e.path === `${data}\\claude_x\\Local State`) || disk.has(e.path) }))
+  on('fs.list', ($, e) => ({ value: e.path === data ? [{ kind: 'directory', name: 'claude_x', size: 0, mtimeMs: 0 }] : [] }))
+  on('fs.write', ($, e) => { disk.set(e.path, e.text); return { value: undefined } })
+  on('fs.read', ($, e) => {
+    if (disk.has(e.path)) return { value: disk.get(e.path)! }
+    const path = e.path.replaceAll('\\', '/') // (the mod's own files come as the engine spells them)
+    if (path.endsWith('/extension/manifest.json'))
+      return { value: '{"content_scripts":[{"js":["theme.js"]}],"web_accessible_resources":[{"resources":["theme.json"]}]}' }
+    if (path.includes('/extension/src/')) return { value: '' }
+    throw new Error('ENOENT')
+  })
+  on('process.run', () => ({ value: { exitCode: 0, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }))
+  const props = { hasSurvey: false, isWorking: false, maxRows: 40, columns: 100 }
+  const install = async () => {
+    const ui = await $.ui.mount({ plugin: 'themes-for-claude', surface: 'desktop', component: 'AbovePrompt', props })
+    await ui.press({ key: 'install' })
+    await ui.unmount()
+  }
+
+  await $.command.run({ command: 'themes' })
+  await install()
+  expect(disk.has(`${data}\\claude_x\\${id}\\theme.js`)).toBe(true)
+  inUse = false
+  // (closed and opened again: the check sees no extension in the other folder, so Install is back)
+  await $.command.run({ command: 'themes' })
+  await $.command.run({ command: 'themes' })
+  await install()
+  expect(disk.has(`C:\\Roaming\\Claude\\${id}\\theme.js`)).toBe(true)
+})
 
 test('on macOS the strip installs into Application Support and sets REACT_PROFILE with launchctl, and removes both', async ($, on) => {
   on('ui.render', { component: 'AbovePrompt' }, ($, e) => $.ui.resolve(e).Box({}))

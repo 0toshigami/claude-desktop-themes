@@ -5,9 +5,9 @@ import type { Theme } from '../types'
 import { assemble, sceneModule } from '../tools/assemble.mjs'
 import { THEMES, parseUserTheme, tile } from './themes'
 
-// The React DevTools slot under Claude Desktop's userData: %APPDATA%\Claude on Windows,
-// ~/Library/Application Support/Claude on macOS. Claude Desktop loads it when REACT_PROFILE=1.
-const SLOT = ['Claude', 'extensions', 'fmkadmapgofadopljbjfkapdkoienihi']
+// The React DevTools slot under Claude Desktop's userData: %APPDATA%\Claude or %LOCALAPPDATA%\Claude-Data\<id> on
+// Windows, ~/Library/Application Support/Claude on macOS. Claude Desktop loads it when REACT_PROFILE=1.
+const SLOT = ['extensions', 'fmkadmapgofadopljbjfkapdkoienihi']
 const MAC_SUPPORT = ['Library', 'Application Support']
 // macOS: what sets REACT_PROFILE=1 again at each login (launchctl setenv lasts until a restart)
 const AGENT = 'com.github.0toshigami.themes-for-claude'
@@ -36,15 +36,29 @@ const isStripOpen = atom({ plugin: 'themes-for-claude', key: 'isStripOpen' } as 
 // Paths join with the separator the base path already uses: Windows paths hold a backslash, macOS ones never do
 const join = (base: string, ...parts: string[]) => [base, ...parts].join(base.includes('\\') ? '\\' : '/')
 
-// home: where the person's own themes folder is (empty when unknown); undefined: neither Windows nor macOS with
-// Claude Desktop
+// Newer Windows installs keep their data in %LOCALAPPDATA%\Claude-Data\<package id>; the one in use holds
+// Local State (the folder can also be there empty, beside a %APPDATA%\Claude still in use)
+const claudeData = async ($: EngineInterface) => {
+  const local = await $.env.get('LOCALAPPDATA')
+  const root = local && join(local, 'Claude-Data')
+  if (!root || !(await $.fs.exists(root))) return undefined
+  for (const d of await $.fs.list(root))
+    if (d.kind !== 'file' && (await $.fs.exists(join(root, d.name, 'Local State')))) return join(root, d.name)
+  return undefined
+}
+
+// home: where the person's own themes folder is (empty when unknown); userData: Claude Desktop's own data folder;
+// undefined: neither Windows nor macOS with Claude Desktop
 type Host = { os: 'windows' | 'macos'; home: string; userData: string }
 const hostOf = async ($: EngineInterface): Promise<Host | undefined> => {
   const appData = await $.env.get('APPDATA')
-  if (appData) return { os: 'windows', home: (await $.env.get('USERPROFILE')) ?? '', userData: appData }
+  if (appData) {
+    const userData = (await claudeData($).catch(() => undefined)) ?? join(appData, 'Claude')
+    return { os: 'windows', home: (await $.env.get('USERPROFILE')) ?? '', userData }
+  }
   const home = await $.env.get('HOME')
-  const userData = home && join(home, ...MAC_SUPPORT)
-  return userData && (await $.fs.exists(join(userData, 'Claude'))) ? { os: 'macos', home: home!, userData } : undefined
+  const userData = home && join(home, ...MAC_SUPPORT, 'Claude')
+  return userData && (await $.fs.exists(userData)) ? { os: 'macos', home: home!, userData } : undefined
 }
 
 const slot = async ($: EngineInterface) => {

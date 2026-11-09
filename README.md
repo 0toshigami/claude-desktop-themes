@@ -73,7 +73,8 @@ claude plugin install themes-for-claude --marketplace 0toshigami/claude-desktop-
 3. The first time, the strip shows only an **Install extension** button. Press it. It copies the extension that
    paints the themes into Claude Desktop's `extensions` folder and sets `REACT_PROFILE=1`, which makes Claude Desktop
    load it:
-   - Windows: the folder is `%APPDATA%\Claude\extensions`, and the variable is set for your Windows account.
+   - Windows: the folder is `%APPDATA%\Claude\extensions`, or `%LOCALAPPDATA%\Claude-Data\<id>\extensions` on
+     newer installs. The variable is set for your Windows account.
    - macOS: the folder is `~/Library/Application Support/Claude/extensions`. The variable is set with
      `launchctl setenv`, and a LaunchAgent (`~/Library/LaunchAgents/com.github.0toshigami.themes-for-claude.plist`)
      sets it again at each login.
@@ -90,7 +91,8 @@ claude plugin install themes-for-claude --marketplace 0toshigami/claude-desktop-
 
 ## Uninstall
 
-Uninstalling the plugin removes only its commands. The extension in `%APPDATA%` stays, so remove it first:
+Uninstalling the plugin removes only its commands. The extension in Claude Desktop's `extensions` folder stays, so
+remove it first:
 
 1. Type `/themes` and press **Remove extension**. It takes the mod's files and entries out of
    `fmkadmapgofadopljbjfkapdkoienihi` in Claude Desktop's `extensions` folder. If no other mod uses that folder, it
@@ -108,7 +110,9 @@ If you uninstalled the plugin first, remove the extension by hand in PowerShell.
 too, so this deletes the folder and the variable only when the folder holds this mod alone:
 
 ```powershell
-$d = "$env:APPDATA\Claude\extensions\fmkadmapgofadopljbjfkapdkoienihi"
+$app = (Get-ChildItem "$env:LOCALAPPDATA\Claude-Data\*\Local State" -ErrorAction SilentlyContinue | Select-Object -First 1).DirectoryName
+if (-not $app) { $app = "$env:APPDATA\Claude" }
+$d = "$app\extensions\fmkadmapgofadopljbjfkapdkoienihi"
 if (((Get-Content "$d\manifest.json" -Raw | ConvertFrom-Json).content_scripts.js -join ',') -eq 'theme.js') {
   Remove-Item -Recurse $d; [Environment]::SetEnvironmentVariable('REACT_PROFILE', $null, 'User')
 } else { "Another mod shares $d. Delete only theme.js, theme.json and event.json, and their manifest entries." }
