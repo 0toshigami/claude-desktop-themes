@@ -2,3 +2,5 @@ node_modules/
 .claude-plugin/types/
 
 *.mp4
+docs/demo.gif
+docs/make-theme-demo.gif
