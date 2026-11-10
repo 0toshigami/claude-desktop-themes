@@ -2,7 +2,7 @@
 
 Themes for Claude Desktop, applied live. Pick one from a strip above the prompt with `/themes`.
 
-[![Switching themes with /themes in Claude Desktop](docs/demo.gif)](https://github.com/user-attachments/assets/32f4bfa8-eecc-4993-8b02-3a0960ac27c3)
+[![Switching themes with /themes in Claude Desktop](https://github.com/user-attachments/assets/0942815f-1ba0-4f46-9720-844bc9de81c1)](https://github.com/user-attachments/assets/0942815f-1ba0-4f46-9720-844bc9de81c1)
 
 ## Live ASCII wallpapers
 
@@ -30,7 +30,7 @@ shake on an error.
 Ask Claude to "make me a theme", with a text idea, a picture, or both. The `make-theme` skill asks which kind you
 want, drafts it as an Artifact for you to approve, and then builds it.
 
-[![Claude making a new theme with the make-theme skill](docs/make-theme-demo.gif)](https://github.com/user-attachments/assets/128fd8a4-7061-43d6-8a54-7e9948964825)
+[![Claude making a new theme with the make-theme skill](https://github.com/user-attachments/assets/668ee6a8-9e08-4b3f-a2a5-7bc93b44cedc)](https://github.com/user-attachments/assets/668ee6a8-9e08-4b3f-a2a5-7bc93b44cedc)
 
 ## Before you install
 
