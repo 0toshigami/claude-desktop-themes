@@ -181,7 +181,12 @@ test('a permission prompt marks the theme as waiting', async ($, on) => {
   const events: { kind: string; state: string; tool: string }[] = []
   on('env.get', ($, e) => ({ value: e.name === 'APPDATA' ? 'C:\\Roaming' : e.name === 'REACT_PROFILE' ? '1' : undefined }))
   on('fs.exists', () => ({ value: false }))
-  on('fs.write', ($, e) => { if (e.path === event) events.push(JSON.parse(e.text)); return { value: undefined } })
+  let worn: Record<string, unknown> = {}
+  on('fs.write', ($, e) => {
+    if (e.path === event) events.push(JSON.parse(e.text))
+    if (e.path.endsWith('theme.json')) worn = JSON.parse(e.text)
+    return { value: undefined }
+  })
   on('fs.read', ($, e) => {
     if (e.path.endsWith('manifest.json')) return { value: '{"content_scripts":[{"js":["theme.js"]}]}' }
     throw new Error('ENOENT')
@@ -195,6 +200,12 @@ test('a permission prompt marks the theme as waiting', async ($, on) => {
     props: { hasSurvey: false, isWorking: false, maxRows: 40, columns: 100 } })
   await ui.press({ key: 'tab-live' })
   await ui.press({ key: 'use-moonlit' })
+  // each wallpaper dropdown writes the worn wallpaper again with its pick
+  await ui.select({ key: 'motion', value: 'smooth' })
+  await ui.select({ key: 'speed', value: '8' })
+  await ui.select({ key: 'cell', value: '22' })
+  await ui.select({ key: 'veil', value: '0' })
+  expect(worn).toEqual(expect.objectContaining({ id: 'moonlit', motion: 'smooth', speed: 8, cell: 22, veil: 0 }))
   await ui.unmount()
   await $.tool.call({ tool: 'Bash', command: 'ls' }).catch(() => undefined)
   // (signal writes on its own, after the call has settled)

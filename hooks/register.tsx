@@ -245,8 +245,8 @@ export const withoutOurs = (m: Manifest): Manifest | undefined => {
 const remove = async ($: EngineInterface) => {
   const host = await hostOf($)
   const dir = await slot($)
-  if (!host || !dir) return
   await update($, confirmRemove, () => false)
+  if (!host || !dir) return $.ui.toast('Claude Desktop\'s data folder was not found, so there is nothing to remove here.')
   let manifest: Manifest | undefined
   try {
     manifest = JSON.parse(String(await $.fs.read(join(dir, 'manifest.json'))))
@@ -301,7 +301,7 @@ const relook = async ($: EngineInterface, set: () => Promise<unknown>) => {
 // "+ Make your own": the make-theme skill's opening line in the prompt box, never over a draft the person is writing
 const makeOwn = async ($: EngineInterface) => {
   if ((await $.prompt.read()).text.trim()) return $.ui.toast('Send or clear your draft, then ask Claude: "make me a theme"')
-  await $.prompt.fill({ text: 'Make me a theme: ' })
+  if ((await $.prompt.fill({ text: 'Make me a theme: ' })).refusal) $.ui.toast('The prompt box is busy. Ask Claude: "make me a theme"')
 }
 
 export const register: Register = on => {
@@ -420,6 +420,16 @@ export const register: Register = on => {
             {asking ? null : removeButton}
           </Box>
         )}
+        {/* (right under the button that asked, so it is in sight however far the tiles scroll) */}
+        {stage === 'missing' ? null : asking ? (
+          <Box key="confirm" flexDirection="row" gap={1} alignItems="center" flexWrap="wrap">
+            <Text color="warning">Remove the extension? Claude Desktop goes back to its own look after a restart.</Text>
+            <Button key="remove-yes" label="Remove" onPress={() => remove($)} />
+            <Button key="remove-no" label="Cancel" dimColor onPress={() => update($, confirmRemove, () => false)} />
+          </Box>
+        ) : stage === 'restart' ? (
+          <Box key="footer" flexDirection="row" justifyContent="flex-end">{removeButton}</Box>
+        ) : null}
         {look}
         {stage === 'ready' ? (
           <Box key="tiles" flexDirection="row" flexWrap="wrap" gap={1}>
@@ -431,15 +441,6 @@ export const register: Register = on => {
               </Box>
             ) : null}
           </Box>
-        ) : null}
-        {stage === 'missing' ? null : asking ? (
-          <Box key="confirm" flexDirection="row" gap={1} alignItems="center" flexWrap="wrap">
-            <Text color="warning">Remove the extension? Claude Desktop goes back to its own look after a restart.</Text>
-            <Button key="remove-yes" label="Remove" onPress={() => remove($)} />
-            <Button key="remove-no" label="Cancel" dimColor onPress={() => update($, confirmRemove, () => false)} />
-          </Box>
-        ) : stage === 'restart' ? (
-          <Box key="footer" flexDirection="row" justifyContent="flex-end">{removeButton}</Box>
         ) : null}
       </Box>
     )
