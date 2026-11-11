@@ -281,15 +281,27 @@ const pick = async ($: EngineInterface, t: Theme) => {
   $.ui.toast(`Theme: ${t.name}`)
 }
 
-const cycle = <T,>(list: T[]) => (v: T) => list[(list.indexOf(v) + 1) % list.length]!
+const cycle = <T,>(list: T[], v: T) => list[(list.indexOf(v) + 1) % list.length]!
 const repick = async ($: EngineInterface) => {
   const now = await active($)
   if (now) await pick($, now)
 }
-const toggleMotion = async ($: EngineInterface) => { await update($, motion, cycle(Object.keys(MOTIONS) as Motion[])); await repick($) }
-const nextSpeed = async ($: EngineInterface) => { await update($, speed, cycle(SPEEDS)); await repick($) }
-const nextCell = async ($: EngineInterface) => { await update($, cell, cycle(Object.keys(CELLS).map(Number))); await repick($) }
-const nextVeil = async ($: EngineInterface) => { await update($, veil, cycle(VEILS)); await repick($) }
+const toggleMotion = async ($: EngineInterface) => {
+  await update($, motion, m => cycle(Object.keys(MOTIONS) as Motion[], m))
+  await repick($)
+}
+const nextSpeed = async ($: EngineInterface) => {
+  await update($, speed, s => cycle(SPEEDS, s))
+  await repick($)
+}
+const nextCell = async ($: EngineInterface) => {
+  await update($, cell, c => cycle(Object.keys(CELLS).map(Number), c))
+  await repick($)
+}
+const nextVeil = async ($: EngineInterface) => {
+  await update($, veil, v => cycle(VEILS, v))
+  await repick($)
+}
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
@@ -395,12 +407,11 @@ export const register: Register = on => {
     return next(e)
   })
 
-  on('tool.check', async ($, e, next) => {
-    const verdict = await next(e)
-    if (verdict.decision === 'ask' && e.tool_use_id && (await active($).catch(() => undefined)))
-      signal($, '', e.tool, 'waiting')
-    return verdict
-  }).catch(($, e, next) => next(e))
+  // (fires only when a permission prompt is about to show; the answer is left to the person)
+  on('classic.PermissionRequest', async ($, e, next) => {
+    if (await active($).catch(() => undefined)) signal($, '', e.tool_name, 'waiting')
+    return next(e)
+  })
 
   on('tool.call', async ($, e, next) => {
     const t = await active($).catch(() => undefined)
