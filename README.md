@@ -85,7 +85,7 @@ claude plugin install themes-for-claude --marketplace 0toshigami/claude-desktop-
 
 - **Simple themes** go into `%USERPROFILE%\.claude\themes-for-claude\` (macOS: `~/.claude/themes-for-claude/`) as
   `<id>.json`, with an optional `<id>.css`.
-  They show in the strip's "Your themes" row, and an update of the mod does not remove them.
+  They show in the strip's "Yours" tab, and an update of the mod does not remove them.
 - **Live wallpapers** go into the same folder: `<id>.json` with `"wallpaper": "<id>"`, and the scene as `<id>.js`.
   Pick it in `/themes` and it shows at once, with no restart.
 
@@ -94,7 +94,7 @@ claude plugin install themes-for-claude --marketplace 0toshigami/claude-desktop-
 Uninstalling the plugin removes only its commands. The extension in Claude Desktop's `extensions` folder stays, so
 remove it first:
 
-1. Type `/themes` and press **Remove extension**. It takes the mod's files and entries out of
+1. Type `/themes` and press **Remove extension** at the bottom of the strip, then **Remove**. It takes the mod's files and entries out of
    `fmkadmapgofadopljbjfkapdkoienihi` in Claude Desktop's `extensions` folder. If no other mod uses that folder, it
    also removes the folder and the `REACT_PROFILE` variable (on macOS, the LaunchAgent too). If another mod uses the
    folder, it keeps both.

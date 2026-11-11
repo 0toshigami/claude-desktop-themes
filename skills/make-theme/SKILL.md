@@ -60,7 +60,7 @@ draft.
    `%USERPROFILE%\.claude\themes-for-claude\` on Windows, `~/.claude/themes-for-claude/` on macOS. Create the folder
    if it is not there.
 2. Tell the person to run `/themes`. The strip reads the folder each time it opens, and the theme shows in the
-   "Your themes" row. A press on its name puts it on, with no restart.
+   "Yours" tab. A press on its name puts it on, with no restart.
 
 The mod refuses a file with a bad `id`, a missing name, or colors that are not `#rrggbb`. It also refuses an `id`
 that a built-in theme uses. Check these before you write the file.
@@ -91,7 +91,7 @@ Do not change the mod's own files: the theme belongs to the person, not to the m
    Read the picture to check it shows the scene's main motifs. If the capture fails (no browser found, `no shot`,
    or a picture that does not show the scene), delete any `<id>.jpg` and go on: the tile then falls back to the
    theme's colors and `deco`, so give the theme a `deco` that hints at the scene, and tell the person.
-4. Tell the person to run `/themes` and pick the theme in the "Your themes" row. The mod copies the scene into the extension and it shows at once, with no restart.
+4. Tell the person to run `/themes` and pick the theme in the "Yours" tab. The mod copies the scene into the extension and it shows at once, with no restart.
 
 ## The theme file
 

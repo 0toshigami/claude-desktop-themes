@@ -36,6 +36,12 @@ const CELLS: Record<number, string> = { 14: 'Small', 18: 'Medium', 22: 'Large' }
 const veil = atom({ plugin: 'themes-for-claude', key: 'veil' } as const, LOOK.veil)
 const VEILS = [0, .2, .4, .6, .8]
 const isStripOpen = atom({ plugin: 'themes-for-claude', key: 'isStripOpen' } as const, false)
+// the strip shows one kind of theme at a time
+type Tab = 'live' | 'color' | 'mine'
+const TABS: Record<Tab, string> = { live: 'Live wallpapers', color: 'Color themes', mine: 'Yours' }
+const tab = atom({ plugin: 'themes-for-claude', key: 'tab' } as const, 'live' as Tab)
+// Remove extension asks once more before it deletes anything
+const confirmRemove = atom({ plugin: 'themes-for-claude', key: 'confirmRemove' } as const, false)
 
 // Paths join with the separator the base path already uses: Windows paths hold a backslash, macOS ones never do
 const join = (base: string, ...parts: string[]) => [base, ...parts].join(base.includes('\\') ? '\\' : '/')
@@ -120,6 +126,7 @@ const loadMine = async ($: EngineInterface) => {
   sceneAt = Object.fromEntries(found.filter(t => t.wallpaper).map(t => [t.id, Math.round(at(`${t.id}.js`)!)]))
 }
 const allThemes = () => [...THEMES, ...mine]
+const tabOf = (t: Theme): Tab => mine.includes(t) ? 'mine' : t.wallpaper ? 'live' : 'color'
 
 let n = Date.now() // (so a reloaded module never repeats an event number)
 const active = async ($: EngineInterface) => {
@@ -239,6 +246,7 @@ const remove = async ($: EngineInterface) => {
   const host = await hostOf($)
   const dir = await slot($)
   if (!host || !dir) return
+  await update($, confirmRemove, () => false)
   let manifest: Manifest | undefined
   try {
     manifest = JSON.parse(String(await $.fs.read(join(dir, 'manifest.json'))))
@@ -283,16 +291,17 @@ const pick = async ($: EngineInterface, t: Theme) => {
   $.ui.toast(`Theme: ${t.name}`)
 }
 
-// (`?? v`, not a trailing `!`: the plugin directory reads a line-final `!` into the next declaration)
-const after = (list: number[], v: number) => list[(list.indexOf(v) + 1) % list.length] ?? v
-// a wallpaper setting moved on to its next value, and the worn theme written again with it
-const nextLook = async ($: EngineInterface, which: 'motion' | 'speed' | 'cell' | 'veil') => {
-  if (which === 'motion') await update($, motion, m => (m === 'grid' ? 'smooth' : 'grid'))
-  if (which === 'speed') await update($, speed, s => after(SPEEDS, s))
-  if (which === 'cell') await update($, cell, c => after(Object.keys(CELLS).map(Number), c))
-  if (which === 'veil') await update($, veil, v => after(VEILS, v))
+// a wallpaper setting changed, and the worn theme written again with it
+const relook = async ($: EngineInterface, set: () => Promise<unknown>) => {
+  await set()
   const now = await active($)
-  if (now) await pick($, now)
+  if (now?.wallpaper) await pick($, now)
+}
+
+// "+ Make your own": the make-theme skill's opening line in the prompt box, never over a draft the person is writing
+const makeOwn = async ($: EngineInterface) => {
+  if ((await $.prompt.read()).text.trim()) return $.ui.toast('Send or clear your draft, then ask Claude: "make me a theme"')
+  await $.prompt.fill({ text: 'Make me a theme: ' })
 }
 
 export const register: Register = on => {
@@ -318,13 +327,19 @@ export const register: Register = on => {
     await loadMine($).catch(() => {})
     await rebuild($).catch(() => {})
     const open = await update($, isStripOpen, o => !o)
+    if (open) {
+      const id = await read($, current)
+      const worn = allThemes().find(t => t.id === id)
+      await update($, tab, () => (worn ? tabOf(worn) : 'color'))
+      await update($, confirmRemove, () => false)
+    }
     return { text: open ? 'Theme strip opened above the prompt.' : 'Theme strip closed.' }
   })
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     if (e.props.hasSurvey || !(await read($, isStripOpen))) return next(e)
     const els = $.ui.resolve(e)
-    const { Box, Text, Button } = els
+    const { Box, Text, Button, Select } = els
     const Svg = 'Svg' in els ? els.Svg : undefined
     const now = await read($, current)
     const stage = await read($, setup)
@@ -332,33 +347,53 @@ export const register: Register = on => {
     const pace = await read($, speed)
     const size = await read($, cell)
     const shade = await read($, veil)
+    const showing = await read($, tab)
+    const asking = await read($, confirmRemove)
     const os = (await hostOf($))?.os ?? 'windows'
     const worn = allThemes().find(t => t.id === now) ?? THEMES[0] as Theme
-    const row = (title: string, themes: Theme[]) => (
-      <Box key={`row-${title}`} flexDirection="column" gap="xs">
-        <Text dimColor>{title}</Text>
-        <Box flexDirection="row" flexWrap="wrap" gap={1}>
-          {themes.map(t => (
-            <Box key={`tile-${t.id}`} flexDirection="column" alignItems="center" gap="xs">
-              {Svg ? <Svg source={tile(t, t.id === now)} alt={`Preview of ${t.name}`} width={120} /> : null}
-              <Button key={`use-${t.id}`} label={t.id === now ? `✓ ${t.name}` : t.name} dimColor={t.id !== now}
-                onPress={() => pick($, t)} />            </Box>
-          ))}
-        </Box>
+    const shown = allThemes().filter(t => tabOf(t) === showing)
+    const removeButton = <Button key="remove" label="Remove extension" dimColor onPress={() => update($, confirmRemove, () => true)} />
+    // the whole tile is a hover scope: the pointer on the picture lights its name and shows its tagline in the header
+    const tileOf = (t: Theme) => (
+      <Box key={`tile-${t.id}`} hover={{ scope: `tip-${t.id}` }} flexDirection="column" alignItems="center" gap="xs">
+        {Svg ? <Svg source={tile(t, t.id === now)} alt={`Preview of ${t.name}`} width={100} /> : null}
+        <Button key={`use-${t.id}`} label={t.id === now ? `✓ ${t.name}` : t.name} dimColor={t.id !== now}
+          variant={t.id === now ? 'primary' : undefined} hover={{ dimColor: false }} onPress={() => pick($, t)} />
       </Box>
     )
+    const look = stage === 'ready' && (showing === 'live' || worn.wallpaper) ? (
+      <Box key="look" flexDirection="row" gap={1} alignItems="center" flexWrap="wrap">
+        <Text dimColor>Wallpaper</Text>
+        <Select key="motion" label="Motion" value={move}
+          options={Object.entries(MOTIONS).map(([value, label]) => ({ value, label }))}
+          onSelect={v => relook($, () => update($, motion, () => (v === 'smooth' ? 'smooth' : 'grid')))} />
+        <Select key="speed" label="Speed" value={String(pace)}
+          options={SPEEDS.map(s => ({ value: String(s), label: `${s}×` }))}
+          onSelect={v => relook($, () => update($, speed, () => Number(v)))} />
+        <Select key="cell" label="Size" value={String(size)}
+          options={Object.entries(CELLS).map(([value, label]) => ({ value, label }))}
+          onSelect={v => relook($, () => update($, cell, () => Number(v)))} />
+        <Select key="veil" label="Chat backdrop" value={String(shade)}
+          options={VEILS.map(v => ({ value: String(v), label: v ? `${Math.round(v * 100)}%` : 'Off' }))}
+          onSelect={v => relook($, () => update($, veil, () => Number(v)))} />
+      </Box>
+    ) : null
     return (
       <Box flexDirection="column" gap={1} paddingX={1}>
-        <Box flexDirection="row" alignItems="center" justifyContent="space-between">
-          <Text>
+        <Box flexDirection="row" alignItems="center" justifyContent="space-between" gap={1}>
+          {/* what is worn, always in sight whichever tab is open: its picture and its name */}
+          <Box flexDirection="row" flexShrink={1} gap={1} alignItems="center">
             <Text weight="semibold">Themes</Text>
-            <Text dimColor>{`  ·  ${worn.name}: ${worn.tagline}`}</Text>
-          </Text>
-          <Box flexDirection="row" gap={1}>
-            {stage === 'missing' ? null
-              : <Button key="remove" label="Remove extension" dimColor onPress={() => remove($)} />}
-            <Button key="close" role="dismiss" label="Close" onPress={() => update($, isStripOpen, () => false)} />
+            <Text dimColor>Wearing</Text>
+            {Svg ? <Svg source={tile(worn, false)} alt={`Preview of ${worn.name}`} width={48} /> : null}
+            <Text weight="semibold">{worn.name}</Text>
+            {shown.map(t => (
+              <Box key={`tip-${t.id}`} display="none" hover={{ scope: `tip-${t.id}`, display: 'flex' }} flexShrink={1}>
+                <Text dimColor italic wrap="truncate-end">{`  —  ${t.name}: ${t.tagline}`}</Text>
+              </Box>
+            ))}
           </Box>
+          <Button key="close" role="dismiss" label="Close" onPress={() => update($, isStripOpen, () => false)} />
         </Box>
         {stage === 'missing' ? (
           <Box key="notice" flexDirection="column" gap="xs" padding={1} borderStyle="round" borderColor="warning">
@@ -374,22 +409,38 @@ export const register: Register = on => {
             <Text>{`Quit Claude Desktop fully (${QUIT[os]}), open it again, then type /themes.`}</Text>
             <Text dimColor>{`Still here after a restart? ${BY_HAND[os]}, then restart again.`}</Text>
           </Box>
-        ) : worn.wallpaper && (
-          <Box flexDirection="row" gap={1} alignItems="center" flexWrap="wrap">
-            <Text dimColor>Wallpaper:</Text>
-            <Text dimColor>motion</Text>
-            <Button key="motion" label={MOTIONS[move]} onPress={() => nextLook($, 'motion')} />
-            <Text dimColor>speed</Text>
-            <Button key="speed" label={`${pace}×`} onPress={() => nextLook($, 'speed')} />
-            <Text dimColor>size</Text>
-            <Button key="cell" label={CELLS[size]} onPress={() => nextLook($, 'cell')} />
-            <Text dimColor>chat backdrop</Text>
-            <Button key="veil" label={shade ? `${Math.round(shade * 100)}%` : 'Off'} onPress={() => nextLook($, 'veil')} />
+        ) : (
+          <Box key="tabs" flexDirection="row" justifyContent="space-between" alignItems="center" gap={1}>
+            <Box flexDirection="row" gap="xs">
+              {(Object.keys(TABS) as Tab[]).map(k => (
+                <Button key={`tab-${k}`} label={k === tabOf(worn) ? `● ${TABS[k]}` : TABS[k]} variant={k === showing ? 'primary' : undefined}
+                  dimColor={k !== showing} onPress={() => update($, tab, () => k)} />
+              ))}
+            </Box>
+            {asking ? null : removeButton}
           </Box>
         )}
-        {stage === 'ready' ? row('Live wallpapers', THEMES.filter(t => t.wallpaper)) : null}
-        {stage === 'ready' ? row('Color themes', THEMES.filter(t => !t.wallpaper)) : null}
-        {stage === 'ready' && mine.length ? row('Your themes', mine) : null}
+        {look}
+        {stage === 'ready' ? (
+          <Box key="tiles" flexDirection="row" flexWrap="wrap" gap={1}>
+            {shown.map(tileOf)}
+            {showing === 'mine' ? (
+              <Box key="make" flexDirection="column" justifyContent="center" alignItems="center" gap="xs">
+                <Button key="make-own" label="+ Make your own" onPress={() => makeOwn($)} />
+                <Text dimColor>from an idea or a picture</Text>
+              </Box>
+            ) : null}
+          </Box>
+        ) : null}
+        {stage === 'missing' ? null : asking ? (
+          <Box key="confirm" flexDirection="row" gap={1} alignItems="center" flexWrap="wrap">
+            <Text color="warning">Remove the extension? Claude Desktop goes back to its own look after a restart.</Text>
+            <Button key="remove-yes" label="Remove" onPress={() => remove($)} />
+            <Button key="remove-no" label="Cancel" dimColor onPress={() => update($, confirmRemove, () => false)} />
+          </Box>
+        ) : stage === 'restart' ? (
+          <Box key="footer" flexDirection="row" justifyContent="flex-end">{removeButton}</Box>
+        ) : null}
       </Box>
     )
   })
