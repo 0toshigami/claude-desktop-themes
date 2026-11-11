@@ -62,7 +62,8 @@ writeFileSync(need('out'), `<!doctype html>
       <p>Writing stays easy to read, <code>code</code> stands out, and the accent marks what you can press.</p>
     </div>
   </div>
-  <div data-cds="ChatComposer"><div class="bg-surface-3">Describe a task or ask a question<span class="send"></span></div></div></div>
+  <div data-cds="ChatComposer"><div class="bg-surface-3">Describe a task or ask a question<span class="send"></span></div></div>
+</div>
 ${boot}
 </body></html>
 `)

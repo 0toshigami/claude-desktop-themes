@@ -16,6 +16,10 @@ const BY_HAND = {
   windows: 'Set the user environment variable REACT_PROFILE=1 by hand',
   macos: 'Run launchctl setenv REACT_PROFILE 1 in Terminal',
 } as const
+const UNSET = {
+  windows: 'Delete the user environment variable REACT_PROFILE by hand',
+  macos: 'Run launchctl unsetenv REACT_PROFILE in Terminal',
+} as const
 const current = atom({ plugin: 'themes-for-claude', key: 'current' } as const, 'claude')
 // missing: no extension; restart: copied, but Claude Desktop has not loaded it yet
 type Setup = 'missing' | 'restart' | 'ready'
@@ -186,15 +190,17 @@ const setProfile = async ($: EngineInterface, host: Host) => {
   await $.fs.write(agentFile(host), AGENT_PLIST)
   return (await $.process.run(['launchctl', 'setenv', 'REACT_PROFILE', '1'])).exitCode
 }
+// true when the apps started from now on no longer get REACT_PROFILE
 const clearProfile = async ($: EngineInterface, host: Host) => {
   if (host.os === 'windows') {
     // (setx first: it tells Windows, so apps started later see the change; reg delete then drops the empty value it leaves)
-    await $.process.run(['setx', 'REACT_PROFILE', ''])
+    const { exitCode } = await $.process.run(['setx', 'REACT_PROFILE', ''])
     await $.process.run(['reg', 'delete', 'HKCU\\Environment', '/v', 'REACT_PROFILE', '/f'])
-    return
+    return exitCode === 0
   }
-  await $.process.run(['launchctl', 'unsetenv', 'REACT_PROFILE'])
+  const { exitCode } = await $.process.run(['launchctl', 'unsetenv', 'REACT_PROFILE'])
   await $.process.run(['rm', '-f', agentFile(host)])
+  return exitCode === 0
 }
 
 const install = async ($: EngineInterface) => {
@@ -240,6 +246,7 @@ const remove = async ($: EngineInterface) => {
   // an unreadable manifest may still belong to another mod: then delete only our files, never the folder
   const rest = manifest && withoutOurs(manifest)
   let exitCode: number | null
+  let cleared = true
   if (!manifest || rest) {
     if (rest) await $.fs.write(join(dir, 'manifest.json'), JSON.stringify(rest, null, 2))
     const files = ['theme.js', ...OURS].map(f => join(dir, ...f.split('/')))
@@ -251,14 +258,14 @@ const remove = async ($: EngineInterface) => {
       ? ['cmd', '/c', 'del', '/q', ...files]
       : ['rm', '-f', '--', ...files.filter(f => !f.endsWith('*.js')), ...ownScenes]))
   } else {
-    await clearProfile($, host)
+    cleared = await clearProfile($, host)
     ;({ exitCode } = await $.process.run(host.os === 'windows' ? ['cmd', '/c', 'rmdir', '/s', '/q', dir] : ['rm', '-rf', dir]))
   }
   await update($, setup, () => 'missing')
   await update($, current, () => 'claude')
-  $.ui.toast(exitCode === 0
-    ? 'Extension removed. Restart Claude Desktop; then you can uninstall the plugin.'
-    : `Could not remove every file. Delete them by hand in ${dir}`)
+  $.ui.toast(exitCode !== 0 ? `Could not remove every file. Delete them by hand in ${dir}`
+    : !cleared ? `Extension removed, but REACT_PROFILE is still set. ${UNSET[host.os]}, then restart Claude Desktop.`
+    : 'Extension removed. Restart Claude Desktop; then you can uninstall the plugin.')
 }
 
 const pick = async ($: EngineInterface, t: Theme) => {
@@ -276,6 +283,7 @@ const pick = async ($: EngineInterface, t: Theme) => {
   $.ui.toast(`Theme: ${t.name}`)
 }
 
+// (`?? v`, not a trailing `!`: the plugin directory reads a line-final `!` into the next declaration)
 const after = (list: number[], v: number) => list[(list.indexOf(v) + 1) % list.length] ?? v
 // a wallpaper setting moved on to its next value, and the worn theme written again with it
 const nextLook = async ($: EngineInterface, which: 'motion' | 'speed' | 'cell' | 'veil') => {
@@ -301,6 +309,7 @@ export const register: Register = on => {
       await update($, cell, () => (CELLS[saved.cell] ? saved.cell : LOOK.cell))
       await update($, veil, () => (VEILS.includes(saved.veil) ? saved.veil : LOOK.veil))
     } catch {}
+    $.ui.status(undefined) // (what a version before 0.7.4 left there)
     return next(e)
   })
 
