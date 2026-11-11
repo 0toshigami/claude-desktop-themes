@@ -68,7 +68,19 @@ test('the strip above the prompt shows only once opened, a button per theme, and
   const ui = await $.ui.mount({ plugin: 'themes-for-claude', surface: 'desktop', component: 'AbovePrompt', props })
   expect(await ui.find({ key: 'install' })).toBeUndefined()
   expect(await ui.find({ key: 'remove' })).toBeDefined()
-  for (const t of THEMES) expect(await ui.find({ key: `use-${t.id}` })).toBeDefined()
+  // one kind at a time, opened on the worn theme's (Claude: a color theme)
+  for (const t of THEMES) expect(!!(await ui.find({ key: `use-${t.id}` }))).toBe(!t.wallpaper)
+  expect(await ui.find({ key: 'speed' })).toBeUndefined()
+  await ui.press({ key: 'tab-live' })
+  for (const t of THEMES) expect(!!(await ui.find({ key: `use-${t.id}` }))).toBe(!!t.wallpaper)
+  expect(await ui.find({ key: 'speed' })).toBeDefined()
+  await ui.press({ key: 'tab-mine' })
+  expect(await ui.find({ key: 'make-own' })).toBeDefined()
+  // Remove extension asks first, and Cancel takes it back
+  await ui.press({ key: 'remove' })
+  expect(await ui.find({ key: 'remove-yes' })).toBeDefined()
+  await ui.press({ key: 'remove-no' })
+  expect(await ui.find({ key: 'remove-yes' })).toBeUndefined()
   await ui.press({ key: 'close' })
   await ui.unmount()
   const after = await $.ui.mount({ plugin: 'themes-for-claude', surface: 'desktop', component: 'AbovePrompt', props })
@@ -146,6 +158,7 @@ test('on Windows removing clears REACT_PROFILE with setx and reg delete, and say
     await bare.unmount()
     const ui = await $.ui.mount({ plugin: 'themes-for-claude', surface: 'desktop', component: 'AbovePrompt', props })
     await ui.press({ key: 'remove' })
+    await ui.press({ key: 'remove-yes' })
     await ui.unmount()
     const said = toasts.at(-1)
     await $.command.run({ command: 'themes' })
@@ -168,7 +181,12 @@ test('a permission prompt marks the theme as waiting', async ($, on) => {
   const events: { kind: string; state: string; tool: string }[] = []
   on('env.get', ($, e) => ({ value: e.name === 'APPDATA' ? 'C:\\Roaming' : e.name === 'REACT_PROFILE' ? '1' : undefined }))
   on('fs.exists', () => ({ value: false }))
-  on('fs.write', ($, e) => { if (e.path === event) events.push(JSON.parse(e.text)); return { value: undefined } })
+  let worn: Record<string, unknown> = {}
+  on('fs.write', ($, e) => {
+    if (e.path === event) events.push(JSON.parse(e.text))
+    if (e.path.endsWith('theme.json')) worn = JSON.parse(e.text)
+    return { value: undefined }
+  })
   on('fs.read', ($, e) => {
     if (e.path.endsWith('manifest.json')) return { value: '{"content_scripts":[{"js":["theme.js"]}]}' }
     throw new Error('ENOENT')
@@ -180,7 +198,14 @@ test('a permission prompt marks the theme as waiting', async ($, on) => {
   await $.command.run({ command: 'themes' })
   const ui = await $.ui.mount({ plugin: 'themes-for-claude', surface: 'desktop', component: 'AbovePrompt',
     props: { hasSurvey: false, isWorking: false, maxRows: 40, columns: 100 } })
+  await ui.press({ key: 'tab-live' })
   await ui.press({ key: 'use-moonlit' })
+  // each wallpaper dropdown writes the worn wallpaper again with its pick
+  await ui.select({ key: 'motion', value: 'smooth' })
+  await ui.select({ key: 'speed', value: '8' })
+  await ui.select({ key: 'cell', value: '22' })
+  await ui.select({ key: 'veil', value: '0' })
+  expect(worn).toEqual(expect.objectContaining({ id: 'moonlit', motion: 'smooth', speed: 8, cell: 22, veil: 0 }))
   await ui.unmount()
   await $.tool.call({ tool: 'Bash', command: 'ls' }).catch(() => undefined)
   // (signal writes on its own, after the call has settled)
@@ -228,6 +253,7 @@ test('on macOS the strip installs into Application Support and sets REACT_PROFIL
   const ui = await $.ui.mount({ plugin: 'themes-for-claude', surface: 'desktop', component: 'AbovePrompt', props })
   expect((await ui.find({ type: 'Text', text: /Cmd\+Q/ }))?.text).toMatch(/Quit Claude Desktop fully \(Cmd\+Q\)/)
   await ui.press({ key: 'remove' })
+  await ui.press({ key: 'remove-yes' })
   await ui.unmount()
   expect(runs).toContainEqual(['launchctl', 'unsetenv', 'REACT_PROFILE'])
   expect(runs).toContainEqual(['rm', '-f', agent])
