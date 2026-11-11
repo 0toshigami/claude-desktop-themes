@@ -281,7 +281,7 @@ const pick = async ($: EngineInterface, t: Theme) => {
   $.ui.toast(`Theme: ${t.name}`)
 }
 
-const after = (list: number[], v: number) => list[(list.indexOf(v) + 1) % list.length]!
+const after = (list: number[], v: number) => list[(list.indexOf(v) + 1) % list.length] ?? v
 // a wallpaper setting moved on to its next value, and the worn theme written again with it
 const nextLook = async ($: EngineInterface, which: 'motion' | 'speed' | 'cell' | 'veil') => {
   if (which === 'motion') await update($, motion, m => (m === 'grid' ? 'smooth' : 'grid'))
@@ -330,7 +330,7 @@ export const register: Register = on => {
     const size = await read($, cell)
     const shade = await read($, veil)
     const os = (await hostOf($))?.os ?? 'windows'
-    const worn = allThemes().find(t => t.id === now) ?? THEMES[0]!
+    const worn = allThemes().find(t => t.id === now) ?? THEMES[0] as Theme
     const row = (title: string, themes: Theme[]) => (
       <Box key={`row-${title}`} flexDirection="column" gap="xs">
         <Text dimColor>{title}</Text>
