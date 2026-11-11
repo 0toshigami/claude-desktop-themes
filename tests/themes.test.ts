@@ -113,6 +113,81 @@ test('on Windows the strip installs into the Claude-Data folder in use, else int
   expect(disk.has(`C:\\Roaming\\Claude\\${id}\\theme.js`)).toBe(true)
 })
 
+test('on Windows removing clears REACT_PROFILE with setx and reg delete, and says so when setx fails', async ($, on) => {
+  on('ui.render', { component: 'AbovePrompt' }, ($, e) => $.ui.resolve(e).Box({}))
+  const slot = 'C:\\Roaming\\Claude\\extensions\\fmkadmapgofadopljbjfkapdkoienihi'
+  const disk = new Map<string, string>()
+  const runs: string[][] = []
+  const toasts: string[] = []
+  let setxCode = 0
+  on('env.get', ($, e) => ({ value: e.name === 'APPDATA' ? 'C:\\Roaming' : undefined }))
+  on('fs.exists', ($, e) => ({ value: disk.has(e.path) }))
+  on('fs.list', () => ({ value: [] }))
+  on('fs.write', ($, e) => { disk.set(e.path, e.text); return { value: undefined } })
+  on('fs.read', ($, e) => {
+    if (disk.has(e.path)) return { value: disk.get(e.path)! }
+    const path = e.path.replaceAll('\\', '/')
+    if (path.endsWith('/extension/manifest.json'))
+      return { value: '{"content_scripts":[{"js":["theme.js"]}],"web_accessible_resources":[{"resources":["theme.json"]}]}' }
+    if (path.includes('/extension/src/')) return { value: '' }
+    throw new Error('ENOENT')
+  })
+  on('process.run', ($, e) => {
+    runs.push([...e.argv])
+    const exitCode = e.argv[0] === 'setx' && e.argv[2] === '' ? setxCode : 0
+    return { value: { exitCode, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
+  })
+  on('ui.toast', ($, e) => { toasts.push(e.text); return { value: undefined } })
+  const props = { hasSurvey: false, isWorking: false, maxRows: 40, columns: 100 }
+  const installThenRemove = async () => {
+    await $.command.run({ command: 'themes' })
+    const bare = await $.ui.mount({ plugin: 'themes-for-claude', surface: 'desktop', component: 'AbovePrompt', props })
+    await bare.press({ key: 'install' })
+    await bare.unmount()
+    const ui = await $.ui.mount({ plugin: 'themes-for-claude', surface: 'desktop', component: 'AbovePrompt', props })
+    await ui.press({ key: 'remove' })
+    await ui.unmount()
+    const said = toasts.at(-1)
+    await $.command.run({ command: 'themes' })
+    disk.clear()
+    return said
+  }
+
+  expect(await installThenRemove()).toMatch(/^Extension removed\. Restart/)
+  expect(runs).toContainEqual(['setx', 'REACT_PROFILE', '1'])
+  expect(runs).toContainEqual(['setx', 'REACT_PROFILE', ''])
+  expect(runs).toContainEqual(['reg', 'delete', 'HKCU\\Environment', '/v', 'REACT_PROFILE', '/f'])
+  expect(runs).toContainEqual(['cmd', '/c', 'rmdir', '/s', '/q', slot])
+  setxCode = 1
+  expect(await installThenRemove()).toMatch(/REACT_PROFILE is still set/)
+})
+
+test('a permission prompt marks the theme as waiting', async ($, on) => {
+  on('ui.render', { component: 'AbovePrompt' }, ($, e) => $.ui.resolve(e).Box({}))
+  const event = 'C:\\Roaming\\Claude\\extensions\\fmkadmapgofadopljbjfkapdkoienihi\\event.json'
+  const events: { kind: string; state: string; tool: string }[] = []
+  on('env.get', ($, e) => ({ value: e.name === 'APPDATA' ? 'C:\\Roaming' : e.name === 'REACT_PROFILE' ? '1' : undefined }))
+  on('fs.exists', () => ({ value: false }))
+  on('fs.write', ($, e) => { if (e.path === event) events.push(JSON.parse(e.text)); return { value: undefined } })
+  on('fs.read', ($, e) => {
+    if (e.path.endsWith('manifest.json')) return { value: '{"content_scripts":[{"js":["theme.js"]}]}' }
+    throw new Error('ENOENT')
+  })
+  on('tool.check', { tool: 'Bash' }, () => ({ decision: 'ask' }))
+  on('classic.PermissionRequest', () => ({ decision: { behavior: 'deny', message: 'test' } }))
+  on('ui.toast', () => ({ value: undefined }))
+  // (a theme worn first: with none, nothing is signalled)
+  await $.command.run({ command: 'themes' })
+  const ui = await $.ui.mount({ plugin: 'themes-for-claude', surface: 'desktop', component: 'AbovePrompt',
+    props: { hasSurvey: false, isWorking: false, maxRows: 40, columns: 100 } })
+  await ui.press({ key: 'use-moonlit' })
+  await ui.unmount()
+  await $.tool.call({ tool: 'Bash', command: 'ls' }).catch(() => undefined)
+  // (signal writes on its own, after the call has settled)
+  for (let i = 0; i < 100 && !events.some(e => e.kind === '' && e.state === 'waiting'); i++) await new Promise(r => setTimeout(r, 1))
+  expect(events).toContainEqual(expect.objectContaining({ kind: '', state: 'waiting', tool: 'Bash' }))
+})
+
 test('on macOS the strip installs into Application Support and sets REACT_PROFILE with launchctl, and removes both', async ($, on) => {
   on('ui.render', { component: 'AbovePrompt' }, ($, e) => $.ui.resolve(e).Box({}))
   const home = '/Users/p', support = `${home}/Library/Application Support`

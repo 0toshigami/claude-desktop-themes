@@ -13,7 +13,6 @@ export const THEMES: Theme[] = [
       'cds-shadow-md': '0 6px 22px rgba(255, 138, 107, .14)',
       'cds-shadow-lg': '0 12px 36px rgba(255, 138, 107, .18)',
     },
-    status: { idle: '☁ dusk', tool: '☁ {tool}…', error: '⛈ {tool} failed', done: '🌇 done' },
     deco: `<circle cx="200" cy="140" r="60" fill="#ff8a6b" opacity=".18"/>
 <ellipse cx="120" cy="40" rx="26" ry="8" fill="#f7e8e2" opacity=".12"/>`,
   },
@@ -27,7 +26,6 @@ export const THEMES: Theme[] = [
       'cds-shadow-lg': '0 12px 32px rgba(224, 86, 127, .18)',
       'cds-ease-out': 'cubic-bezier(.34, 1.56, .64, 1)', 'cds-dur-base': '.3s',
     },
-    status: { idle: '🌸', tool: '🌸 {tool}…', error: '🥀 {tool} failed', done: '🌸 done' },
     deco: `<g fill="#f4a6bd"><ellipse cx="100" cy="20" rx="5" ry="3" transform="rotate(30 100 20)"/>
 <ellipse cx="190" cy="90" rx="5" ry="3" transform="rotate(-20 190 90)"/>
 <ellipse cx="130" cy="125" rx="4" ry="2.5" transform="rotate(60 130 125)"/></g>`,
@@ -43,7 +41,6 @@ export const THEMES: Theme[] = [
       // (snappy, not 0s: a 0s transition never ends, and parts that wait for its end stay stuck)
       'cds-dur-base': '40ms', 'cds-dur-slow': '.1s',
     },
-    status: { idle: '[SYS] online', tool: '[EXEC] {tool}', error: '[ERR] {tool} failed', done: '[SYS] done' },
     deco: `<g opacity=".25">${Array.from({ length: 35 }, (_, i) => `<rect y="${i * 4}" width="240" height="1" fill="#000"/>`).join('')}</g>`,
   },
   {
@@ -54,7 +51,6 @@ export const THEMES: Theme[] = [
       'cds-shadow-md': '0 6px 22px rgba(90, 174, 255, .12)',
       'cds-shadow-lg': '0 12px 34px rgba(90, 174, 255, .16)',
     },
-    status: { idle: '🌙', tool: '🌊 {tool}…', error: '🌊 {tool} failed', done: '✨ done' },
     deco: `<g fill="#dce6fa"><circle cx="90" cy="18" r="1.2"/><circle cx="170" cy="40" r="1"/><circle cx="215" cy="12" r="1.4"/></g>
 <path d="M0 128 Q30 118 60 128 T120 128 T180 128 T240 128 V140 H0 Z" fill="#5aaeff" opacity=".35"/>`,
   },
@@ -68,65 +64,52 @@ export const THEMES: Theme[] = [
       'cds-shadow-lg': '0 1px 0 rgba(58, 47, 34, .1), 0 12px 24px -8px rgba(58, 47, 34, .3)',
       'cds-dur-base': '.35s',
     },
-    status: { idle: '✒', tool: '✒ {tool}…', error: '✒ {tool}: a red ink blot', done: '✒ end of page' },
     deco: `<rect width="240" height="140" rx="10" fill="none" stroke="#8c5f32" stroke-width="10" opacity=".12"/>`,
   },
   live('moonlit', 'Moonlit', 'A crescent moon, drifting clouds, twinkling stars',
     ['#0d1530', '#dbe2f5', '#d9c98f'], 'radial-gradient(120% 90% at 75% 10%, #1a2a5e, #0d1530 60%, #090f24)',
-    'rgba(22, 32, 70, .6)', 'rgba(217, 201, 143, .3)', 'a quiet night to build ☾',
-    { idle: '☾', tool: '☾ {tool}…', error: '☁ {tool} failed', done: '✦ done' }),
+    'rgba(22, 32, 70, .6)', 'rgba(217, 201, 143, .3)', 'a quiet night to build ☾'),
   live('clawd', 'Clawd', 'A turning orange spark, drifting embers, Clawd on patrol',
     ['#1f1714', '#f2e6df', '#d97757'], bands(.04, 'radial-gradient(90% 80% at 70% 30%, #3a2219, #1f1714 55%, #150f0d)'),
-    'rgba(46, 30, 24, .65)', 'rgba(217, 119, 87, .3)', 'what shall we spark today?',
-    { idle: '✳', tool: '✳ {tool}…', error: '✳ {tool} failed', done: '✳ done' }),
+    'rgba(46, 30, 24, .65)', 'rgba(217, 119, 87, .3)', 'what shall we spark today?'),
   live('cloud-drift', 'Cloud Drift', 'White clouds over a bright sky, birds gliding by',
     ['#d8ecfa', '#1d3447', '#2f78bd'], bands(.22, 'linear-gradient(#4fa3e8, #86c3f0 55%, #b6dbf6)'),
-    'rgba(255, 255, 255, .6)', 'rgba(47, 120, 189, .3)', 'blue skies ahead',
-    { idle: '☁', tool: '☁ {tool}…', error: '☂ {tool} failed', done: '☀ done' }),
+    'rgba(255, 255, 255, .6)', 'rgba(47, 120, 189, .3)', 'blue skies ahead'),
   live('honu-lagoon', 'Honu Lagoon', 'A sea turtle swimming across a lagoon, light rays and bubbles',
     ['#0f3a44', '#e3f6f2', '#5fd0b8'], bands(.14, 'linear-gradient(#35a6f0, #1d7ad8 45%, #1650b2)'),
-    'rgba(15, 58, 68, .6)', 'rgba(95, 208, 184, .3)', 'swim along, slow and steady',
-    { idle: '🐢', tool: '🐢 {tool}…', error: '🫧 {tool} failed', done: '🐢 done' }),
+    'rgba(15, 58, 68, .6)', 'rgba(95, 208, 184, .3)', 'swim along, slow and steady'),
   live('koi-pond', 'Koi Pond', 'Koi circling a pond between lily pads, rings on the water',
     ['#11332d', '#e4f2ea', '#ef8a4a'], bands(.12, 'linear-gradient(175deg, #4aa08c, #2f8070 50%, #1f6156)'),
-    'rgba(17, 51, 45, .6)', 'rgba(239, 138, 74, .3)', 'still water, clear mind',
-    { idle: '◌', tool: '◌ {tool}…', error: '◌ {tool} failed', done: '◎ done' }),
+    'rgba(17, 51, 45, .6)', 'rgba(239, 138, 74, .3)', 'still water, clear mind'),
   live('jellyfish', 'Jellyfish', 'Jellyfish rising through deep water, bells pulsing',
     ['#0a1830', '#dfe7fb', '#a58cf0'], bands(.07, 'linear-gradient(#174784, #0c2b58 50%, #071a3a)'),
-    'rgba(12, 28, 58, .6)', 'rgba(165, 140, 240, .3)', 'drifting into deep work',
-    { idle: '◠', tool: '◠ {tool}…', error: '◠ {tool} failed', done: '◠ done' }),
+    'rgba(12, 28, 58, .6)', 'rgba(165, 140, 240, .3)', 'drifting into deep work'),
   live('lantern-night', 'Lantern Night', 'Paper lanterns drifting down a river at night',
     ['#0b1424', '#efe6d2', '#f2a541'], 'linear-gradient(#070c1c, #24305e 29%, #0e1a30 30%, #08111f 60%, #050a14)',
-    'rgba(11, 20, 36, .6)', 'rgba(242, 165, 65, .3)', 'let your ideas drift',
-    { idle: '🏮', tool: '🏮 {tool}…', error: '🏮 {tool} went out', done: '🏮 done' }),
+    'rgba(11, 20, 36, .6)', 'rgba(242, 165, 65, .3)', 'let your ideas drift'),
   live('fireflies', 'Fireflies', 'Fireflies wandering and blinking over tall grass',
     ['#0b130e', '#e3eedc', '#d8e86a'], bands(.03, 'radial-gradient(120% 80% at 50% 110%, #1b3522, #0c1710 60%, #070c09)'),
-    'rgba(14, 26, 18, .65)', 'rgba(216, 232, 106, .28)', 'a warm glow for late work',
-    { idle: '✧', tool: '✧ {tool}…', error: '✧ {tool} failed', done: '✦ done' }),
+    'rgba(14, 26, 18, .65)', 'rgba(216, 232, 106, .28)', 'a warm glow for late work'),
   live('neon-rain', 'Neon Rain', 'Rain over a city at night, neon signs buzzing, umbrellas passing by',
     ['#0c1020', '#e3e8f6', '#ff5fa2'], 'linear-gradient(#05070f, #0b1024 40%, #1e1838 75%, #34203f)',
-    'rgba(12, 16, 32, .6)', 'rgba(255, 95, 162, .3)', 'rain outside, code inside',
-    { idle: '☔', tool: '☔ {tool}…', error: '⚡ {tool} failed', done: '🌃 done' }),
+    'rgba(12, 16, 32, .6)', 'rgba(255, 95, 162, .3)', 'rain outside, code inside'),
   ((t: Theme) => ({ ...t, vars: { ...t.vars, 'cds-radius': '10px', 'cds-radius-composer': '18px',
     'cds-shadow-md': '0 6px 22px rgba(242, 155, 184, .14)' } }))(
     live('sakura-dusk', 'Sakura Dusk', 'Cherry branches at the corners, petals drifting through a violet evening',
       ['#231a2e', '#f6e9f0', '#f29bb8'], 'linear-gradient(#17112b, #2a1c44 40%, #523058 72%, #8c4a5e)',
-      'rgba(35, 26, 46, .6)', 'rgba(242, 155, 184, .3)', 'petals at dusk',
-      { idle: '🌸', tool: '🌸 {tool}…', error: '🍂 {tool} failed', done: '🌸 done' })),
+      'rgba(35, 26, 46, .6)', 'rgba(242, 155, 184, .3)', 'petals at dusk')),
   live('snow-cabin', 'Snow Cabin', 'A log cabin under snowy peaks, a warm window, smoke curling into falling snow',
     ['#0e1628', '#e6edf8', '#ffb85c'], 'linear-gradient(#060b18, #101c38 55%, #1c2a4a)',
-    'rgba(14, 22, 40, .6)', 'rgba(255, 184, 92, .3)', 'warm inside, snow outside',
-    { idle: '❄', tool: '❄ {tool}…', error: '🌨 {tool} failed', done: '🏔 done' }),
+    'rgba(14, 22, 40, .6)', 'rgba(255, 184, 92, .3)', 'warm inside, snow outside'),
   live('star-voyage', 'Star Voyage', 'A little rocket passing a ringed planet, shooting stars overhead',
     ['#0d0a1f', '#e6ecff', '#ff6fb5'], 'radial-gradient(110% 90% at 85% 20%, #2a1a52, #120d2e 50%, #08061a)',
-    'rgba(16, 12, 40, .6)', 'rgba(255, 111, 181, .3)', 'ready for liftoff?',
-    { idle: '🚀', tool: '🚀 {tool}…', error: '☄ {tool} failed', done: '🪐 done' }),
+    'rgba(16, 12, 40, .6)', 'rgba(255, 111, 181, .3)', 'ready for liftoff?'),
 ]
 
 function live(id: string, name: string, tagline: string, [bg, text, accent]: [string, string, string], sky: string,
-  glass: string, rim: string, greet: string, status: NonNullable<Theme['status']>): Theme {
+  glass: string, rim: string, greet: string): Theme {
   return {
-    id, name, tagline, bg, text, accent, wallpaper: id, status,
+    id, name, tagline, bg, text, accent, wallpaper: id,
     vars: {
       'cds-radius': '8px', 'cds-radius-composer': '16px', 'cds-panel-radius': '14px',
       'wall-sky': sky, 'wall-halo': bg, 'wall-glass': glass, 'wall-rim': rim, 'wall-greet': JSON.stringify(greet),
@@ -182,14 +165,11 @@ export const parseUserTheme = (json: string, css?: string, scene = false): Theme
   if (!str(t.name, 60) || !hex(t.bg) || !hex(t.text) || !hex(t.accent)) return undefined
   const vars = Object.fromEntries(Object.entries(t.vars && typeof t.vars === 'object' ? t.vars : {})
     .filter(([k, v]) => /^[a-z][a-z0-9-]{0,80}$/.test(k) && str(v, 500)))
-  const s = t.status as Record<string, unknown> | undefined
-  const status = s && ['idle', 'tool', 'error', 'done'].every(k => str(s[k], 80))
-    ? { idle: String(s.idle), tool: String(s.tool), error: String(s.error), done: String(s.done) } : undefined
   return {
     id: t.id, name: String(t.name), tagline: str(t.tagline, 200) ? String(t.tagline) : '',
     wallpaper: scene && t.wallpaper === t.id ? t.id : undefined,
     bg: String(t.bg), text: String(t.text), accent: String(t.accent),
-    font: str(t.font, 200) ? String(t.font) : undefined, vars, status,
+    font: str(t.font, 200) ? String(t.font) : undefined, vars,
     deco: str(t.deco, 40000) ? String(t.deco) : undefined, css: css || undefined,
   }
 }

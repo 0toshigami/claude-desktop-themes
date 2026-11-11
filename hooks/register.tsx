@@ -16,6 +16,10 @@ const BY_HAND = {
   windows: 'Set the user environment variable REACT_PROFILE=1 by hand',
   macos: 'Run launchctl setenv REACT_PROFILE 1 in Terminal',
 } as const
+const UNSET = {
+  windows: 'Delete the user environment variable REACT_PROFILE by hand',
+  macos: 'Run launchctl unsetenv REACT_PROFILE in Terminal',
+} as const
 const current = atom({ plugin: 'themes-for-claude', key: 'current' } as const, 'claude')
 // missing: no extension; restart: copied, but Claude Desktop has not loaded it yet
 type Setup = 'missing' | 'restart' | 'ready'
@@ -62,10 +66,10 @@ const hostOf = async ($: EngineInterface): Promise<Host | undefined> => {
 }
 
 const slot = async ($: EngineInterface) => {
-  const h = await hostOf($)
-  return h && join(h.userData, ...SLOT)
+  const host = await hostOf($)
+  return host && join(host.userData, ...SLOT)
 }
-const agentFile = (h: Host) => join(h.home, 'Library', 'LaunchAgents', `${AGENT}.plist`)
+const agentFile = (host: Host) => join(host.home, 'Library', 'LaunchAgents', `${AGENT}.plist`)
 const AGENT_PLIST = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -84,14 +88,11 @@ export const fileOf = (t: Theme, css = '', look: Look = LOOK, scene?: string) =>
     ? { id: t.id, bg: t.bg, text: t.text, accent: t.accent, font: t.font, vars: t.vars, wallpaper: t.wallpaper, scene, ...look, css }
     : {})
 
-const statusOf = (t: Theme | undefined, kind: 'idle' | 'tool' | 'error' | 'done', tool = '') =>
-  t?.status?.[kind].split('{tool}').join(tool)
-
 let mine: Theme[] = []
 const MINE = ['.claude', 'themes-for-claude']
 const mineDir = async ($: EngineInterface) => {
-  const h = await hostOf($)
-  return h?.home ? join(h.home, ...MINE) : undefined
+  const host = await hostOf($)
+  return host?.home ? join(host.home, ...MINE) : undefined
 }
 // when each of the person's scenes last changed: the page loads it again on a new time
 let sceneAt: Record<string, number> = {}
@@ -184,26 +185,28 @@ const rebuild = async ($: EngineInterface) => {
 }
 
 // REACT_PROFILE=1 for the apps started from now on, and after the next login
-const setProfile = async ($: EngineInterface, h: Host) => {
-  if (h.os === 'windows') return (await $.process.run(['setx', 'REACT_PROFILE', '1'])).exitCode
-  await $.fs.write(agentFile(h), AGENT_PLIST)
+const setProfile = async ($: EngineInterface, host: Host) => {
+  if (host.os === 'windows') return (await $.process.run(['setx', 'REACT_PROFILE', '1'])).exitCode
+  await $.fs.write(agentFile(host), AGENT_PLIST)
   return (await $.process.run(['launchctl', 'setenv', 'REACT_PROFILE', '1'])).exitCode
 }
-const clearProfile = async ($: EngineInterface, h: Host) => {
-  if (h.os === 'windows') {
-    // (SetEnvironmentVariable, not reg delete: it tells Windows, so apps started later see the change)
-    await $.process.run(['powershell', '-NoProfile', '-Command',
-      "[Environment]::SetEnvironmentVariable('REACT_PROFILE', $null, 'User')"])
-    return
+// true when the apps started from now on no longer get REACT_PROFILE
+const clearProfile = async ($: EngineInterface, host: Host) => {
+  if (host.os === 'windows') {
+    // (setx first: it tells Windows, so apps started later see the change; reg delete then drops the empty value it leaves)
+    const { exitCode } = await $.process.run(['setx', 'REACT_PROFILE', ''])
+    await $.process.run(['reg', 'delete', 'HKCU\\Environment', '/v', 'REACT_PROFILE', '/f'])
+    return exitCode === 0
   }
-  await $.process.run(['launchctl', 'unsetenv', 'REACT_PROFILE'])
-  await $.process.run(['rm', '-f', agentFile(h)])
+  const { exitCode } = await $.process.run(['launchctl', 'unsetenv', 'REACT_PROFILE'])
+  await $.process.run(['rm', '-f', agentFile(host)])
+  return exitCode === 0
 }
 
 const install = async ($: EngineInterface) => {
-  const h = await hostOf($)
+  const host = await hostOf($)
   const dir = await slot($)
-  if (!h || !dir) {
+  if (!host || !dir) {
     $.ui.toast('Only Windows and macOS are supported for now.')
     return
   }
@@ -211,10 +214,10 @@ const install = async ($: EngineInterface) => {
   if (!(await $.fs.exists(join(dir, 'theme.json')))) await $.fs.write(join(dir, 'theme.json'), '{}')
   if (!(await $.fs.exists(join(dir, 'event.json')))) await $.fs.write(join(dir, 'event.json'), '{}')
   await $.fs.write(join(dir, 'manifest.json'), await withOurs($, dir))
-  const exitCode = await setProfile($, h)
+  const exitCode = await setProfile($, host)
   await update($, setup, () => 'restart')
   $.ui.toast(exitCode === 0
-    ? `Installed. Quit Claude Desktop fully (${QUIT[h.os]}) and open it again to use the themes.`
+    ? `Installed. Quit Claude Desktop fully (${QUIT[host.os]}) and open it again to use the themes.`
     : 'The extension is copied, but REACT_PROFILE=1 could not be set.')
 }
 
@@ -233,9 +236,9 @@ export const withoutOurs = (m: Manifest): Manifest | undefined => {
 }
 
 const remove = async ($: EngineInterface) => {
-  const h = await hostOf($)
+  const host = await hostOf($)
   const dir = await slot($)
-  if (!h || !dir) return
+  if (!host || !dir) return
   let manifest: Manifest | undefined
   try {
     manifest = JSON.parse(String(await $.fs.read(join(dir, 'manifest.json'))))
@@ -243,26 +246,26 @@ const remove = async ($: EngineInterface) => {
   // an unreadable manifest may still belong to another mod: then delete only our files, never the folder
   const rest = manifest && withoutOurs(manifest)
   let exitCode: number | null
+  let cleared = true
   if (!manifest || rest) {
     if (rest) await $.fs.write(join(dir, 'manifest.json'), JSON.stringify(rest, null, 2))
     const files = ['theme.js', ...OURS].map(f => join(dir, ...f.split('/')))
     // (del expands the scenes/*.js pattern itself; rm takes the scene files by name, as the folder holds no other)
     const scenes = join(dir, 'scenes')
-    const ownScenes = h.os === 'macos' && (await $.fs.exists(scenes))
+    const ownScenes = host.os === 'macos' && (await $.fs.exists(scenes))
       ? (await $.fs.list(scenes)).filter(f => f.kind === 'file' && f.name.endsWith('.js')).map(f => join(scenes, f.name)) : []
-    ;({ exitCode } = await $.process.run(h.os === 'windows'
+    ;({ exitCode } = await $.process.run(host.os === 'windows'
       ? ['cmd', '/c', 'del', '/q', ...files]
       : ['rm', '-f', '--', ...files.filter(f => !f.endsWith('*.js')), ...ownScenes]))
   } else {
-    await clearProfile($, h)
-    ;({ exitCode } = await $.process.run(h.os === 'windows' ? ['cmd', '/c', 'rmdir', '/s', '/q', dir] : ['rm', '-rf', dir]))
+    cleared = await clearProfile($, host)
+    ;({ exitCode } = await $.process.run(host.os === 'windows' ? ['cmd', '/c', 'rmdir', '/s', '/q', dir] : ['rm', '-rf', dir]))
   }
   await update($, setup, () => 'missing')
   await update($, current, () => 'claude')
-  $.ui.status(undefined)
-  $.ui.toast(exitCode === 0
-    ? 'Extension removed. Restart Claude Desktop; then you can uninstall the plugin.'
-    : `Could not remove every file. Delete them by hand in ${dir}`)
+  $.ui.toast(exitCode !== 0 ? `Could not remove every file. Delete them by hand in ${dir}`
+    : !cleared ? `Extension removed, but REACT_PROFILE is still set. ${UNSET[host.os]}, then restart Claude Desktop.`
+    : 'Extension removed. Restart Claude Desktop; then you can uninstall the plugin.')
 }
 
 const pick = async ($: EngineInterface, t: Theme) => {
@@ -277,19 +280,20 @@ const pick = async ($: EngineInterface, t: Theme) => {
     { motion: await read($, motion), speed: await read($, speed), cell: await read($, cell), veil: await read($, veil) },
     own ? `scenes/${t.id}.js?v=${sceneAt[t.id]}` : undefined))
   await update($, current, () => t.id)
-  $.ui.status(statusOf(t, 'idle'))
   $.ui.toast(`Theme: ${t.name}`)
 }
 
-const next = <T,>(list: T[]) => (v: T) => list[(list.indexOf(v) + 1) % list.length]!
-const repick = async ($: EngineInterface) => {
+// (`?? v`, not a trailing `!`: the plugin directory reads a line-final `!` into the next declaration)
+const after = (list: number[], v: number) => list[(list.indexOf(v) + 1) % list.length] ?? v
+// a wallpaper setting moved on to its next value, and the worn theme written again with it
+const nextLook = async ($: EngineInterface, which: 'motion' | 'speed' | 'cell' | 'veil') => {
+  if (which === 'motion') await update($, motion, m => (m === 'grid' ? 'smooth' : 'grid'))
+  if (which === 'speed') await update($, speed, s => after(SPEEDS, s))
+  if (which === 'cell') await update($, cell, c => after(Object.keys(CELLS).map(Number), c))
+  if (which === 'veil') await update($, veil, v => after(VEILS, v))
   const now = await active($)
   if (now) await pick($, now)
 }
-const toggleMotion = async ($: EngineInterface) => { await update($, motion, next(Object.keys(MOTIONS) as Motion[])); await repick($) }
-const nextSpeed = async ($: EngineInterface) => { await update($, speed, next(SPEEDS)); await repick($) }
-const nextCell = async ($: EngineInterface) => { await update($, cell, next(Object.keys(CELLS).map(Number))); await repick($) }
-const nextVeil = async ($: EngineInterface) => { await update($, veil, next(VEILS)); await repick($) }
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
@@ -304,8 +308,8 @@ export const register: Register = on => {
       await update($, speed, () => (SPEEDS.includes(saved.speed) ? saved.speed : LOOK.speed))
       await update($, cell, () => (CELLS[saved.cell] ? saved.cell : LOOK.cell))
       await update($, veil, () => (VEILS.includes(saved.veil) ? saved.veil : LOOK.veil))
-      $.ui.status(statusOf(await active($), 'idle'))
     } catch {}
+    $.ui.status(undefined) // (what a version before 0.7.4 left there)
     return next(e)
   })
 
@@ -329,7 +333,7 @@ export const register: Register = on => {
     const size = await read($, cell)
     const shade = await read($, veil)
     const os = (await hostOf($))?.os ?? 'windows'
-    const worn = allThemes().find(t => t.id === now) ?? THEMES[0]!
+    const worn = allThemes().find(t => t.id === now) ?? THEMES[0] as Theme
     const row = (title: string, themes: Theme[]) => (
       <Box key={`row-${title}`} flexDirection="column" gap="xs">
         <Text dimColor>{title}</Text>
@@ -374,13 +378,13 @@ export const register: Register = on => {
           <Box flexDirection="row" gap={1} alignItems="center" flexWrap="wrap">
             <Text dimColor>Wallpaper:</Text>
             <Text dimColor>motion</Text>
-            <Button key="motion" label={MOTIONS[move]} onPress={() => toggleMotion($)} />
+            <Button key="motion" label={MOTIONS[move]} onPress={() => nextLook($, 'motion')} />
             <Text dimColor>speed</Text>
-            <Button key="speed" label={`${pace}×`} onPress={() => nextSpeed($)} />
+            <Button key="speed" label={`${pace}×`} onPress={() => nextLook($, 'speed')} />
             <Text dimColor>size</Text>
-            <Button key="cell" label={CELLS[size]} onPress={() => nextCell($)} />
+            <Button key="cell" label={CELLS[size]} onPress={() => nextLook($, 'cell')} />
             <Text dimColor>chat backdrop</Text>
-            <Button key="veil" label={shade ? `${Math.round(shade * 100)}%` : 'Off'} onPress={() => nextVeil($)} />
+            <Button key="veil" label={shade ? `${Math.round(shade * 100)}%` : 'Off'} onPress={() => nextLook($, 'veil')} />
           </Box>
         )}
         {stage === 'ready' ? row('Live wallpapers', THEMES.filter(t => t.wallpaper)) : null}
@@ -395,32 +399,24 @@ export const register: Register = on => {
     return next(e)
   })
 
-  on('tool.check', async ($, e, next) => {
-    const verdict = await next(e)
-    if (verdict.decision === 'ask' && e.tool_use_id && (await active($).catch(() => undefined)))
-      signal($, '', e.tool, 'waiting')
-    return verdict
-  }).catch(($, e, next) => next(e))
+  // (fires only when a permission prompt is about to show; the answer is left to the person)
+  on('classic.PermissionRequest', async ($, e, next) => {
+    if (await active($).catch(() => undefined)) signal($, '', e.tool_name, 'waiting')
+    return next(e)
+  })
 
   on('tool.call', async ($, e, next) => {
     const t = await active($).catch(() => undefined)
     if (!t) return next(e)
     signal($, 'tool', e.tool, 'thinking')
-    $.ui.status(statusOf(t, 'tool', e.tool))
     const result = await next(e)
-    if (result.isError) {
-      signal($, 'error', e.tool)
-      $.ui.status(statusOf(t, 'error', e.tool))
-    }
+    if (result.isError) signal($, 'error', e.tool)
     return result
   }).catch(($, e, next) => next(e))
 
   on('turn.complete', async ($, e, next) => {
     const t = e.agentId ? undefined : await active($).catch(() => undefined)
-    if (t) {
-      signal($, 'done', '', 'idle')
-      $.ui.status(statusOf(t, 'done'))
-    }
+    if (t) signal($, 'done', '', 'idle')
     return next(e)
   })
 }
