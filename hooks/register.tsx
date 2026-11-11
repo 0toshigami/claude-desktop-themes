@@ -281,26 +281,15 @@ const pick = async ($: EngineInterface, t: Theme) => {
   $.ui.toast(`Theme: ${t.name}`)
 }
 
-const cycle = <T,>(list: T[], v: T) => list[(list.indexOf(v) + 1) % list.length]!
-const repick = async ($: EngineInterface) => {
+const after = (list: number[], v: number) => list[(list.indexOf(v) + 1) % list.length]!
+// a wallpaper setting moved on to its next value, and the worn theme written again with it
+const nextLook = async ($: EngineInterface, which: 'motion' | 'speed' | 'cell' | 'veil') => {
+  if (which === 'motion') await update($, motion, m => (m === 'grid' ? 'smooth' : 'grid'))
+  if (which === 'speed') await update($, speed, s => after(SPEEDS, s))
+  if (which === 'cell') await update($, cell, c => after(Object.keys(CELLS).map(Number), c))
+  if (which === 'veil') await update($, veil, v => after(VEILS, v))
   const now = await active($)
   if (now) await pick($, now)
-}
-const toggleMotion = async ($: EngineInterface) => {
-  await update($, motion, m => cycle(Object.keys(MOTIONS) as Motion[], m))
-  await repick($)
-}
-const nextSpeed = async ($: EngineInterface) => {
-  await update($, speed, s => cycle(SPEEDS, s))
-  await repick($)
-}
-const nextCell = async ($: EngineInterface) => {
-  await update($, cell, c => cycle(Object.keys(CELLS).map(Number), c))
-  await repick($)
-}
-const nextVeil = async ($: EngineInterface) => {
-  await update($, veil, v => cycle(VEILS, v))
-  await repick($)
 }
 
 export const register: Register = on => {
@@ -386,13 +375,13 @@ export const register: Register = on => {
           <Box flexDirection="row" gap={1} alignItems="center" flexWrap="wrap">
             <Text dimColor>Wallpaper:</Text>
             <Text dimColor>motion</Text>
-            <Button key="motion" label={MOTIONS[move]} onPress={() => toggleMotion($)} />
+            <Button key="motion" label={MOTIONS[move]} onPress={() => nextLook($, 'motion')} />
             <Text dimColor>speed</Text>
-            <Button key="speed" label={`${pace}×`} onPress={() => nextSpeed($)} />
+            <Button key="speed" label={`${pace}×`} onPress={() => nextLook($, 'speed')} />
             <Text dimColor>size</Text>
-            <Button key="cell" label={CELLS[size]} onPress={() => nextCell($)} />
+            <Button key="cell" label={CELLS[size]} onPress={() => nextLook($, 'cell')} />
             <Text dimColor>chat backdrop</Text>
-            <Button key="veil" label={shade ? `${Math.round(shade * 100)}%` : 'Off'} onPress={() => nextVeil($)} />
+            <Button key="veil" label={shade ? `${Math.round(shade * 100)}%` : 'Off'} onPress={() => nextLook($, 'veil')} />
           </Box>
         )}
         {stage === 'ready' ? row('Live wallpapers', THEMES.filter(t => t.wallpaper)) : null}
