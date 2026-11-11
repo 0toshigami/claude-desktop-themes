@@ -84,9 +84,6 @@ export const fileOf = (t: Theme, css = '', look: Look = LOOK, scene?: string) =>
     ? { id: t.id, bg: t.bg, text: t.text, accent: t.accent, font: t.font, vars: t.vars, wallpaper: t.wallpaper, scene, ...look, css }
     : {})
 
-const statusOf = (t: Theme | undefined, kind: 'idle' | 'tool' | 'error' | 'done', tool = '') =>
-  t?.status?.[kind].split('{tool}').join(tool)
-
 let mine: Theme[] = []
 const MINE = ['.claude', 'themes-for-claude']
 const mineDir = async ($: EngineInterface) => {
@@ -259,7 +256,6 @@ const remove = async ($: EngineInterface) => {
   }
   await update($, setup, () => 'missing')
   await update($, current, () => 'claude')
-  $.ui.status(undefined)
   $.ui.toast(exitCode === 0
     ? 'Extension removed. Restart Claude Desktop; then you can uninstall the plugin.'
     : `Could not remove every file. Delete them by hand in ${dir}`)
@@ -277,7 +273,6 @@ const pick = async ($: EngineInterface, t: Theme) => {
     { motion: await read($, motion), speed: await read($, speed), cell: await read($, cell), veil: await read($, veil) },
     own ? `scenes/${t.id}.js?v=${sceneAt[t.id]}` : undefined))
   await update($, current, () => t.id)
-  $.ui.status(statusOf(t, 'idle'))
   $.ui.toast(`Theme: ${t.name}`)
 }
 
@@ -305,7 +300,6 @@ export const register: Register = on => {
       await update($, speed, () => (SPEEDS.includes(saved.speed) ? saved.speed : LOOK.speed))
       await update($, cell, () => (CELLS[saved.cell] ? saved.cell : LOOK.cell))
       await update($, veil, () => (VEILS.includes(saved.veil) ? saved.veil : LOOK.veil))
-      $.ui.status(statusOf(await active($), 'idle'))
     } catch {}
     return next(e)
   })
@@ -406,21 +400,14 @@ export const register: Register = on => {
     const t = await active($).catch(() => undefined)
     if (!t) return next(e)
     signal($, 'tool', e.tool, 'thinking')
-    $.ui.status(statusOf(t, 'tool', e.tool))
     const result = await next(e)
-    if (result.isError) {
-      signal($, 'error', e.tool)
-      $.ui.status(statusOf(t, 'error', e.tool))
-    }
+    if (result.isError) signal($, 'error', e.tool)
     return result
   }).catch(($, e, next) => next(e))
 
   on('turn.complete', async ($, e, next) => {
     const t = e.agentId ? undefined : await active($).catch(() => undefined)
-    if (t) {
-      signal($, 'done', '', 'idle')
-      $.ui.status(statusOf(t, 'done'))
-    }
+    if (t) signal($, 'done', '', 'idle')
     return next(e)
   })
 }

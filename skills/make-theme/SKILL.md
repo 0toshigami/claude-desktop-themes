@@ -12,7 +12,7 @@ Before you start, read `hooks/themes.ts` there: its themes are the style to foll
 
 There are two kinds. If the person did not say which kind, explain both and ask with `AskUserQuestion`. Do not guess.
 
-- **Simple theme.** Colors, a font, corner shapes, shadows, a status line, and optionally a stylesheet with
+- **Simple theme.** Colors, a font, corner shapes, shadows, and optionally a stylesheet with
   decorations and reactions (a glow while a tool runs, a shake on an error). It is data only. It goes into the
   person's own themes folder, shows in the `/themes` strip at once, and a mod update never removes it.
 - **Live wallpaper.** All of the above, plus an animated ASCII scene behind the window, drawn by the extension (like
@@ -106,7 +106,6 @@ Do not change the mod's own files: the theme belongs to the person, not to the m
     "cds-radius": "10px", "cds-radius-composer": "18px", "cds-panel-radius": "14px",
     "cds-shadow-md": "0 6px 22px rgba(224, 164, 88, .14)"
   },
-  "status": { "idle": "☕", "tool": "☕ {tool}…", "error": "☔ {tool} failed", "done": "☕ done" },
   "deco": "<circle cx=\"200\" cy=\"30\" r=\"20\" fill=\"#e0a458\" opacity=\".2\"/>"
 }
 ```
@@ -118,7 +117,6 @@ Do not change the mod's own files: the theme belongs to the person, not to the m
 - `vars`: Claude's other design tokens, without the leading `--`. The themes in `hooks/themes.ts` use the corner trio
   (`cds-radius`, `cds-radius-composer`, `cds-panel-radius`), the shadows (`cds-shadow-sm`, `-md`, `-lg`) and
   motion (`cds-dur-base`, `cds-ease-out`). No `;`, `{`, `}`, `<`, `>`, and no `url()` except `data:`.
-- `status`: the status line. `{tool}` is the tool's name. Keep each one short; one emoji plus a few words.
 - `deco`: SVG markup drawn over a 240×140 preview of a Claude window, for the theme's tile. Keep it light.
 - A live wallpaper also has `wallpaper` (its scene's name) and the `wall-*` vars that `live()` in `hooks/themes.ts`
   sets: `wall-sky`, `wall-halo`, `wall-glass`, `wall-rim`, `wall-greet`.

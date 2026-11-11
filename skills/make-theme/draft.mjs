@@ -13,7 +13,6 @@ const T = { ...theme, motion: 'smooth', cell: 18, veil: .4, css }
 const start = Number(arg('start') ?? 20)
 if (!js.includes('time: 0, last: 0')) throw new Error('theme.js has no scene clock to start')
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`)
-const status = theme.status?.idle ?? ''
 const boot = `<script>window.chrome = { runtime: { getURL: n => n } }; const T = ${JSON.stringify(T)};
 window.fetch = async n => ({ text: async () => (n === 'theme.json' ? JSON.stringify(T) : '{}') });</script>
 <script>${js.replace('time: 0, last: 0', `time: ${start}, last: 0`)}</script>`
@@ -52,7 +51,6 @@ writeFileSync(need('out'), `<!doctype html>
   .bg-surface-3 { background: var(--cds-surface-3); border-radius: var(--cds-radius-composer, 20px); padding: 14px 16px;
     display: flex; justify-content: space-between; align-items: center; color: var(--cds-text-muted); box-shadow: var(--cds-shadow-md, none); }
   .send { width: 28px; height: 28px; border-radius: 50%; background: var(--cds-fill-accent); }
-  .status { position: absolute; bottom: 8px; font-size: 12px; color: var(--cds-text-muted); }
 </style></head><body>
 <div class="dframe-sidebar"><b>Claude</b><p>New session</p><p>Search</p><p>Customize</p><p style="margin-top:24px">${esc(theme.name)}</p></div>
 <div class="main">
@@ -64,9 +62,7 @@ writeFileSync(need('out'), `<!doctype html>
       <p>Writing stays easy to read, <code>code</code> stands out, and the accent marks what you can press.</p>
     </div>
   </div>
-  <div data-cds="ChatComposer"><div class="bg-surface-3">Describe a task or ask a question<span class="send"></span></div></div>
-  <div class="status">${esc(status)}</div>
-</div>
+  <div data-cds="ChatComposer"><div class="bg-surface-3">Describe a task or ask a question<span class="send"></span></div></div></div>
 ${boot}
 </body></html>
 `)
