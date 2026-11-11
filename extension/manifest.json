@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Claude Desktop Themes",
-  "version": "0.7.4",
+  "version": "0.8.0",
   "description": "Paints the theme picked in the Claude Desktop Themes mod's /themes strip over Claude Desktop, live. Sits in the React DevTools slot, loaded when REACT_PROFILE=1.",
   "content_scripts": [
     { "matches": ["<all_urls>"], "js": ["theme.js"] }
