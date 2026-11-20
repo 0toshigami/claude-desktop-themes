@@ -2,6 +2,14 @@ html { background: var(--wall-sky) fixed !important; }
 body { background: transparent !important; }
 * { --cds-page-bg: transparent !important; --epitaxy-transcript-surface: transparent !important; }
 .root > .grid.bg-surface-1, main.dframe-content, .tiles-shell { background: transparent !important; }
+[data-testid=epitaxy-virtual-transcript], .epitaxy-own-scroll-layer { background: transparent !important; }
+[data-testid=epitaxy-virtual-transcript] .flex.min-h-full.flex-col::before { background: transparent !important; }
+.dframe-sidebar {
+  border-right-color: transparent !important;
+  background: var(--wall-glass) !important; backdrop-filter: blur(14px);
+  box-shadow: inset -1px 0 0 var(--wall-rim);
+}
+.dframe-sidebar .dframe-nav-scroll { background: transparent !important; }
 
 .epitaxy-transcript-typography, [data-testid=start-card-clawd]::after {
   text-shadow: 0 0 3px var(--wall-halo), 0 0 6px var(--wall-halo), 0 0 10px var(--wall-halo);
